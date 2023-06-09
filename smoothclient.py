@@ -3,6 +3,20 @@ from pynput.keyboard import Key, Listener
 import json
 import threading
 import time 
+from ev3dev2.power import PowerSupply
+
+power = PowerSupply()
+
+# Get the battery voltage
+voltage = power.measured_voltage / 1000  # Convert millivolts to volts
+
+# Calculate the remaining percentage
+max_voltage = 8.3  # Maximum voltage for a full battery
+min_voltage = 6.0  # Minimum voltage for an empty battery
+remaining_percentage = (voltage - min_voltage) / (max_voltage - min_voltage) * 100
+
+# Display the remaining battery percentage
+print("Battery Remaining: {:.2f}%".format(remaining_percentage))
 
 # Create a new client socket
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
