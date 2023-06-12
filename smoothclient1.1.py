@@ -173,9 +173,14 @@ def receive_tracking_data():
                     grid_size = received_data["grid_size"]
                     print(f"SIZE OF THE GRID IS: {grid_size}")
 
-                    try:
+                if 'orientation' in received_data:
+                    orientation = received_data["orientation"]
+                    print(f"orientation is (90 is north): {orientation}")
 
-                        
+
+                    
+
+                    try:
                         # Initialize grid
                         grid = [[0 for _ in range(grid_size[1])] for _ in range(grid_size[0])]
 

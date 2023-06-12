@@ -19,8 +19,14 @@ cv2.createTrackbar('V_high','image',255,255,nothing)
 
 cap = cv2.VideoCapture(0)
 
+alpha = 0.9 # Contrast control (1.0-3.0)
+beta = 0 # Brightness control (0-100)
+
 while(1):
     ret, frame = cap.read()
+
+    frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
+
     if not ret:
         break
 

@@ -8,6 +8,8 @@ import math
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
+
+#### MAKE CONNECTION TO THE CLIENT ####
 def wait_for_connection():
     global client_socket
     while True:  # Keep trying until a connection is made
@@ -23,20 +25,19 @@ def wait_for_connection():
 
 # Create a new server socket
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 # Bind the socket to a specific network interface and port number
 server_socket.bind(("localhost", 1235))
-
 # Tell the operating system to add the socket to the list of sockets
 # that should be actively listening for incoming connections.
 server_socket.listen(1)
-
 # Start a new thread that waits for a client to connect
 client_socket = None
 connection_event = threading.Event()  # Create a new threading Event
 connection_thread = threading.Thread(target=wait_for_connection)
 connection_thread.start()
 #connection_event.wait()
+##########################################
+
 
 def get_center_of_contour(contour):
     M = cv2.moments(contour)
@@ -44,6 +45,25 @@ def get_center_of_contour(contour):
         return None
     else:
         return (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+
+
+
+
+def get_hsv_values(frame):
+    # Display the frame in its original BGR colors
+    cv2.imshow("Image", frame)
+
+    # Let the user pick a point on the frame
+    point = cv2.selectROI("Image", frame, fromCenter=False, showCrosshair=True)
+    cv2.destroyAllWindows()
+
+    # Extract the selected pixel
+    x, y = point[:2]
+    hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    hsv_values = hsv_frame[y, x]
+
+    return hsv_values
+
 
 def draw_ROI(frame):
     fig,ax = plt.subplots(1)
@@ -62,12 +82,12 @@ print("Waiting for camera...")
 cap = cv2.VideoCapture(0)
 print("Camera is on!")
 
-lower_green = np.array([36, 25, 25])
-upper_green = np.array([86, 255, 255])
+# lower_green = np.array([36, 25, 25])
+# upper_green = np.array([86, 255, 255])
 
-# define range for red color
-lower_red = np.array([0, 64, 0])
-upper_red = np.array([11, 255, 255])
+# # define range for red color
+# lower_red = np.array([0, 64, 0])
+# upper_red = np.array([11, 255, 255])
 
 red_cross_centers = None
 
@@ -75,20 +95,24 @@ red_cross_centers = None
 lower_yellow = np.array([24, 24, 204])
 upper_yellow = np.array([53, 61, 255])
 
-# define range for white color (light)
-lower_white_light = np.array([0, 0, 200])
-upper_white_light = np.array([179, 12, 255])
+# # define range for white color (light)
+# lower_white_light = np.array([0, 0, 200])
+# upper_white_light = np.array([179, 12, 255])
 
-# define range for white color (shadow)
-lower_white_shadow = np.array([16, 79, 203])
-upper_white_shadow = np.array([86, 140, 255])
+# # define range for white color (shadow)
+# lower_white_shadow = np.array([16, 79, 203])
+# upper_white_shadow = np.array([86, 140, 255])
 
-# define range for orange color
-lower_orange = np.array([10, 114, 240])
-upper_orange = np.array([51, 255, 255])
+# # define range for orange color
+# lower_orange = np.array([10, 114, 240])
+# upper_orange = np.array([51, 255, 255])
 
 frame_corners = None
 last_print_time = time.time()
+hsv_ranges = {}
+colors = ["green", "red", "yellow", "white", "orange"]
+
+
 
 balls_position = []
 orange_balls_position = []
@@ -106,7 +130,7 @@ def get_angle(p1, p2):
         return None
     dx = p2[0] - p1[0]
     dy = p2[1] - p1[1]
-    return math.degrees(math.atan2(dy, dx))
+    return math.degrees(math.atan2(dy, dx)) - 90
 
 def get_vector(p1, p2):
     if p1 is None or p2 is None:
@@ -114,6 +138,21 @@ def get_vector(p1, p2):
     dx = p2[0] - p1[0]
     dy = p2[1] - p1[1]
     return dx, dy
+
+
+
+def calculate_orientation(vector):
+    x, y = vector
+    rad = math.atan2(y, x)  # This returns the angle in radians
+    deg = math.degrees(rad)  # Convert to degrees
+
+    # Adjust the degrees to be in the range [0, 360)
+    if deg < 0:
+        deg = 360 + deg
+    
+    return deg
+
+
 
 
 ball_ids = {}  # A dict to store the IDs of the balls
@@ -138,8 +177,21 @@ def assign_ids_to_balls(balls_position):
             next_ball_id = (next_ball_id % 10) + 1  # This will make the ID number go back to 1 after reaching 10
     ball_ids = new_ball_ids
 
+robot_vector = None
+robot_degrees = None
+
+alpha = 0.7 # Contrast control (1.0-3.0)
+beta = 0 # Brightness control (0-100)
+
 while True:
     _, frame = cap.read()
+    
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+
+    frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
+
     
     if frame_corners is None:
         frame_corners = draw_ROI(frame)
@@ -149,43 +201,72 @@ while True:
             max_x = max(p[0] for p in frame_corners)
             max_y = max(p[1] for p in frame_corners)
             grid_size = (max_x, max_y)
+    if hsv_ranges == {}:
+        for color in colors:
+            print(f"Select HSV values for {color}")
+            hsv_values = get_hsv_values(frame)
+
+            # get the min and max HSV values based on the selected HSV values
+            lower = [max(0, x - 10) for x in hsv_values]
+            upper = [min(255, x + 10) for x in hsv_values]
+
+            print(lower)
+            print(upper)
+
+            hsv_ranges[color] = {
+                "lower": np.array(lower, dtype=np.uint8),
+                "upper": np.array(upper, dtype=np.uint8)
+            }
+        print(hsv_ranges)
+   
 
     if frame_corners is not None:  # This is a new conditional block
         polygon = np.array(frame_corners[:-1])
 
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        green_mask = cv2.inRange(hsv, lower_green, upper_green)
+        green_mask = cv2.inRange(hsv, hsv_ranges['green']['lower'], hsv_ranges['green']['upper'])
         green_contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # print(hsv_ranges['green']['lower'])
+        # print(hsv_ranges['green']['upper'])
+        
 
         # Get a binary image isolating the white pixels (light)
-        white_mask_light = cv2.inRange(hsv, lower_white_light, upper_white_light)
+        #white_mask_light = cv2.inRange(hsv, hsv_ranges['white_shadow']['lower'], hsv_ranges['white_shadow']['upper'])
     
         # Get a binary image isolating the white pixels (shadow)
-        white_mask_shadow = cv2.inRange(hsv, lower_white_shadow, upper_white_shadow)
+        #white_mask_shadow = cv2.inRange(hsv, hsv_ranges['white_light']['lower'], hsv_ranges['white_light']['upper'])
 
         # Combine the white masks (light and shadow)
-        white_mask = cv2.bitwise_or(white_mask_light, white_mask_shadow)
+        #white_mask = cv2.bitwise_or(white_mask_light, white_mask_shadow)
+        white_mask = cv2.inRange(hsv, hsv_ranges['white']['lower'], hsv_ranges['white']['upper'])
+    
         white_contours, _ = cv2.findContours(white_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # Get a binary image isolating the orange pixels
-        orange_mask = cv2.inRange(hsv, lower_orange, upper_orange)
+        orange_mask = cv2.inRange(hsv, hsv_ranges['orange']['lower'], hsv_ranges['orange']['upper'])
         orange_contours, _ = cv2.findContours(orange_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
         # Get a binary image isolating the yellow pixels
-        yellow_mask = cv2.inRange(hsv, lower_yellow, upper_yellow)
+        yellow_mask = cv2.inRange(hsv, hsv_ranges['yellow']['lower'], hsv_ranges['yellow']['upper'])
         yellow_contours, _ = cv2.findContours(yellow_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
+        # Get a binary image isolating the red pixels
+        red_mask = cv2.inRange(hsv, hsv_ranges['red']['lower'], hsv_ranges['red']['upper'])
+        red_contours, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         if green_contours:
             robot_contour = max(green_contours, key=cv2.contourArea)
-            robot_center = get_center_of_contour(robot_contour)
+            robot_front = get_center_of_contour(robot_contour)
 
-            if robot_center is not None and cv2.pointPolygonTest(polygon, robot_center, False) >= 0:
-                cv2.circle(frame, robot_center, 5, (255, 0, 0), -1)
-                robot_position = (robot_center[0] - polygon[0][0], polygon[0][1] - robot_center[1])
+            if robot_front is not None and cv2.pointPolygonTest(polygon, robot_front, False) >= 0:
+                cv2.circle(frame, robot_front, 5, (255, 0, 0), -1)
+                robot_position = (robot_front[0] - polygon[0][0], polygon[0][1] - robot_front[1])
                 if time.time() - last_robot_print_time >= 3:
-                    print(f"Robot at: {robot_position}")
+                  #  back_position = (robot_position[0] - robot_vector[0] / 2, robot_position[1] - robot_vector[1] / 2)
+                  #  front_position = (robot_position[0] + robot_vector[0] / 2, robot_position[1] + robot_vector[1] / 2)
+                    print(f"Robot front at: {robot_front}")
+                 #   print(f"Robot front at: {front_position}")
                     if client_socket is not None:
                         robot_position = tuple(int(x) for x in robot_position)  # Convert numpy ints to python ints
                         try:
@@ -202,20 +283,25 @@ while True:
                 tail_center = get_center_of_contour(tail_contour)
                 if tail_center is not None and cv2.pointPolygonTest(polygon, tail_center, False) >= 0:
                     cv2.circle(frame, tail_center, 5, (0, 255, 255), -1)  # Yellow circle
-                    robot_vector = get_vector(robot_center, tail_center)
+                    if robot_front is not None and tail_center is not None:
+                        robot_vector = get_vector(robot_front, tail_center)
+                        robot_degrees = calculate_orientation(robot_vector)
+                        #print(f"Robot vector: {robot_vector}")
+                        
+                        #robot_orientation = calculate_robot_orientation(robot_vector, frame.shape[0], frame.shape[1])
+                        #robot_orientation = calculate_robot_orientation(robot_vector, frame_height, frame_width)
 
+                        #print(f"Robot orientation: {robot_orientation}")
 
         balls_position = []  # Reset the white balls position at each frame
         orange_balls_position = []  # Reset the orange balls position at each frame
     
-        min_contour_area = 100  # adjust this value to suit your needs
+        min_contour_area = 5  # adjust this value to suit your needs
 
         # red cross
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # Get a binary image isolating the red pixels
-        red_mask = cv2.inRange(hsv, lower_red, upper_red)
-        red_contours, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
 
         # If the red cross centers have not been computed yet
         if red_cross_centers is None:
@@ -242,7 +328,7 @@ while True:
                 continue
             ball_center = get_center_of_contour(contour)
             if ball_center is not None and cv2.pointPolygonTest(polygon, ball_center, False) >= 0:
-                cv2.circle(frame, ball_center, 5, (203, 192, 255), -1)
+                cv2.circle(frame, ball_center, 5, (0, 165, 255), -1)
                 balls_position.append((ball_center[0] - polygon[0][0], polygon[0][1] - ball_center[1]))
         
         assign_ids_to_balls(balls_position)  # NEW
@@ -274,19 +360,21 @@ while True:
                 continue
             ball_center = get_center_of_contour(contour)
             if ball_center is not None and cv2.pointPolygonTest(polygon, ball_center, False) >= 0:
-                cv2.circle(frame, ball_center, 5, (0, 165, 255), -1)
+                cv2.circle(frame, ball_center, 5, (255, 0, 0), -1)
                 orange_balls_position.append((ball_center[0] - polygon[0][0], polygon[0][1] - ball_center[1]))
 
         if time.time() - last_send_time >= 1:  # Send the data every second
+            print(f"Robot Degrees: {robot_degrees}")
             last_send_time = time.time()
-
+        
             # Create a dictionary to hold all the data
             data = {
                 "white_balls": [tuple(int(x) for x in pos) for pos in balls_position],
                 "orange_balls": [tuple(int(x) for x in pos) for pos in orange_balls_position],
                 "robot": None if robot_position is None else tuple(int(x) for x in robot_position),
                 "red_crosses": [tuple(int(x) for x in pos) for pos in red_cross_centers],
-                "grid_size": None if grid_size is None else tuple(int(x) for x in grid_size)
+                "grid_size": None if grid_size is None else tuple(int(x) for x in grid_size),
+                "orientation": None if robot_degrees is None else float(robot_degrees)
             }
 
             # Remove any None values
@@ -311,3 +399,4 @@ cap.release()
 cv2.destroyAllWindows()
 client_socket.close()
 server_socket.close()
+
