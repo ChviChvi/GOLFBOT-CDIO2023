@@ -36,27 +36,28 @@ def ball_in_cross(ball_coordinates, cross_coordinates):
 def bfs(graph, start ):
     visited = set()  # Set to keep track of visited nodes
     queue = deque([start])  # Initialize the queue with the start node
+    start.parent = start
 
     while queue:
         node = queue.popleft()  # Get the next node from the front of the queue
         if node.value not in visited:
-            #grid[][].parent = node.value  # Process the node (in this example, we simply print it)
             visited.add(node.value)  # Mark the node as visited
 
             # Add the unvisited neighboring nodes to the queue
             neighbors = graph[node.y][node.x].neighbors
             for neighbor in neighbors:
-                if neighbor not in visited:
+                if neighbor.value not in visited:
                     queue.append(neighbor)
                     neighbor.parent = node
+                
 
-
-#Check to see to go horizontal or vertical first.
-#Returns true if 
-def move_horizontal( maxx, maxy , robot_coordinates):
+#Returns the path from ball to robot in coordinates
+#Doesnt take edges or corners into account yet
+#Prints the path 
+def pathtoball( maxx, maxy , robot_coordinates,ball_coordinates):
 
     
-    grid = []  # Create an empty list to store rows
+    grid = []   # Create an empty list to store rows
 
     value=1
     for i in range(maxy):
@@ -65,7 +66,7 @@ def move_horizontal( maxx, maxy , robot_coordinates):
             vertex = Vertex(value = value,parent = 0, neighbors = [], x = j, y = i )
             row.append(vertex)  # Populate the row with values
             value += 1
-        grid.append(row)  # Add the row to the grid
+        grid.append(row)   # Add the row to the grid
 
     for i in range(len(grid)):
         for j in range(len(grid[i])):
@@ -85,18 +86,25 @@ def move_horizontal( maxx, maxy , robot_coordinates):
 
     robot_vertex = grid[robot_coordinates.y][robot_coordinates.x]
     bfs( grid,robot_vertex)
+
+
+    i = ball_coordinates.y-1
+    j = ball_coordinates.x-1 
    
-    print(grid[1][2].parent.x)
-    print(grid[1][2].parent.y)
-    print(grid[1][2].x)
-    print(grid[1][2].y)
-    
+    t = 0
+    while t<5 and grid[i][j].parent.value != robot_vertex.value:
+        
+        print("x: ", grid[i][j].parent.x, ", y: ", grid[i][j].parent.y)
+        h=i
+        k=j
+        i = grid[h][k].parent.y
+        j = grid[h][k].parent.x
 
-
-
-robotC=Coordinate(2,3)
-
-move_horizontal(4,8,robotC)
+       
+#Testing
+robotC=Coordinate(2,2)
+ballC= Coordinate(7,5)
+pathtoball(10,10,robotC,ballC)
 
 
 
