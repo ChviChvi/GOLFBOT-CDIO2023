@@ -5,18 +5,18 @@ import threading
 import time 
 from ev3dev2.power import PowerSupply
 
-power = PowerSupply()
+#power = PowerSupply()
 
-# Get the battery voltage
-voltage = power.measured_voltage / 1000  # Convert millivolts to volts
+# # Get the battery voltage
+# voltage = power.measured_voltage / 1000  # Convert millivolts to volts
 
-# Calculate the remaining percentage
-max_voltage = 8.3  # Maximum voltage for a full battery
-min_voltage = 6.0  # Minimum voltage for an empty battery
-remaining_percentage = (voltage - min_voltage) / (max_voltage - min_voltage) * 100
+# # Calculate the remaining percentage
+# max_voltage = 8.3  # Maximum voltage for a full battery
+# min_voltage = 6.0  # Minimum voltage for an empty battery
+# remaining_percentage = (voltage - min_voltage) / (max_voltage - min_voltage) * 100
 
-# Display the remaining battery percentage
-print("Battery Remaining: {:.2f}%".format(remaining_percentage))
+# # Display the remaining battery percentage
+# print("Battery Remaining: {:.2f}%".format(remaining_percentage))
 
 # Create a new client socket
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -36,30 +36,30 @@ def connect_to_robot():
 robot_connection_thread = threading.Thread(target=connect_to_robot)
 robot_connection_thread.start()
 
-# Create another client socket to connect to Tracing5.py
-tracking_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# # Create another client socket to connect to Tracing5.py
+# tracking_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-def connect_to_tracking():
-    global tracking_socket
-    while True:
-        try:
-            print("Connecting to tracking...")
-            tracking_socket.connect(("localhost", 1235))
-            print("Connected to tracking!")
-            print("Client started. Press arrow keys to control the EV3 brick.")
-            print("Press O and P to control the second medium motor.")
-            print("Press Ctrl+C to stop the client.")
-            threading.Thread(target=receive_tracking_data, daemon=True).start() # moved here
-            break
-        except ConnectionRefusedError:
-            print("Failed to connect to tracking. Retrying in 5 seconds...")
-            time.sleep(5)
-        except Exception as e:
-            print(f"Unexpected error while connecting to tracking: {e}")
+# def connect_to_tracking():
+#     global tracking_socket
+#     while True:
+#         try:
+#             print("Connecting to tracking...")
+#             tracking_socket.connect(("localhost", 1235))
+#             print("Connected to tracking!")
+#             print("Client started. Press arrow keys to control the EV3 brick.")
+#             print("Press O and P to control the second medium motor.")
+#             print("Press Ctrl+C to stop the client.")
+#             threading.Thread(target=receive_tracking_data, daemon=True).start() # moved here
+#             break
+#         except ConnectionRefusedError:
+#             print("Failed to connect to tracking. Retrying in 5 seconds...")
+#             time.sleep(5)
+#         except Exception as e:
+#             print(f"Unexpected error while connecting to tracking: {e}")
 
 
-tracking_connection_thread = threading.Thread(target=connect_to_tracking)
-tracking_connection_thread.start()
+# tracking_connection_thread = threading.Thread(target=connect_to_tracking)
+# tracking_connection_thread.start()
 
 key_state = {
     "up": False,
