@@ -29,7 +29,7 @@ def astar(grid, start, goal):
     return came_from, cost_so_far
 
 def get_neighbors(grid, current):
-    dirs = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    dirs = [(0, 1), (0, -1), (1, 0), (-1, 0), (-1, -1), (1, 1), (-1, 1), (1, -1)]
     result = []
     for dir in dirs:
         nx, ny = current[0] + dir[0], current[1] + dir[1]
