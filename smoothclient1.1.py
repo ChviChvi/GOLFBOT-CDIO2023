@@ -78,7 +78,10 @@ def move_robot(path_to_nearest_ball, orientation):
     if len(path_to_nearest_ball) > 1:  # If there is at least one move to make
         next_move = path_to_nearest_ball[1]  # We choose the second element because the first one is the current robot's position
         current_pos = path_to_nearest_ball[0]
+        slowmode = False
         move = (next_move[0]-current_pos[0], next_move[1]-current_pos[1])  # Calculate the difference to determine the direction
+        
+        #TODO insert code tht checks if the robot is near a wall/obstacle
 
         check_facing
 
