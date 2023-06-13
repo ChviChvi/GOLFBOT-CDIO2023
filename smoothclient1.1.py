@@ -78,7 +78,10 @@ def move_robot(path_to_nearest_ball):
     if len(path_to_nearest_ball) > 1:  # If there is at least one move to make
         next_move = path_to_nearest_ball[1]  # We choose the second element because the first one is the current robot's position
         current_pos = path_to_nearest_ball[0]
+        slowmode = False
         move = (next_move[0]-current_pos[0], next_move[1]-current_pos[1])  # Calculate the difference to determine the direction
+        
+        #TODO insert code tht checks if the robot is near a wall/obstacle
 
         print("did the algo send?2")
         # Now update key_state based on the direction
@@ -90,6 +93,8 @@ def move_robot(path_to_nearest_ball):
             key_state["left"] = True
         elif move == (0, 1):
             key_state["right"] = True
+        if slowmode == True:
+            key_state["slowmode"] = True
         print("did the algo send?5")
         # Send the command to the robot
         client_socket.send((json.dumps(key_state) + '\n').encode())

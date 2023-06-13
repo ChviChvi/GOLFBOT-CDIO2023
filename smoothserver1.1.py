@@ -64,12 +64,16 @@ try:
                     #     motor_speed = -25
                     if 'up' in command and command['up']:
                         tank.on_for_degrees(50, 50, 90)
+                    if 'up' in command and command['up'] and 'slowmode' = True:
+                        tank.on_for_degrees(25, 25, 90)
                     if 'down' in command and command['down']:
                         tank.on_for_degrees(-50, -50, 90)
+                    if 'down' in command and command['down'] and 'slowmode' = True:
+                        tank.on_for_degrees(-25, -25, 90)
                     if 'left' in command and command['left']:
-                        tank.on_for_degrees(-50, 50, 90)
+                        tank.on_for_degrees(-25, 25, 90)
                     if 'right' in command and command['right']:
-                        tank.on_for_degrees(50, -50, 90)
+                        tank.on_for_degrees(25, -25, 90)
                     if 'o' in command and command['o']:
                         medium_motor_2.on_for_degrees(25, 90)
                     if 'p' in command and command['p']:
