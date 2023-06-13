@@ -207,8 +207,8 @@ while True:
             hsv_values = get_hsv_values(frame)
 
             # get the min and max HSV values based on the selected HSV values
-            lower = [max(0, x - 10) for x in hsv_values]
-            upper = [min(255, x + 10) for x in hsv_values]
+            lower = [max(0, x - 8) for x in hsv_values]
+            upper = [min(255, x + 8) for x in hsv_values]
 
             print(lower)
             print(upper)

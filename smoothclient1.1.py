@@ -65,40 +65,96 @@ tracking_connection_thread = threading.Thread(target=connect_to_tracking)
 tracking_connection_thread.start()
 
 key_state = {
-    "up": False,
-    "down": False,
-    "left": False,
-    "right": False,
+    "forward": False,
+    "backward": False,
+    "turn_left": False,
+    "turn_right": False,
     "o": False,
     "p": False
 }
 
-def move_robot(path_to_nearest_ball):
+def move_robot(path_to_nearest_ball, orientation):
     print("did the algo send?1")
     if len(path_to_nearest_ball) > 1:  # If there is at least one move to make
         next_move = path_to_nearest_ball[1]  # We choose the second element because the first one is the current robot's position
         current_pos = path_to_nearest_ball[0]
         move = (next_move[0]-current_pos[0], next_move[1]-current_pos[1])  # Calculate the difference to determine the direction
 
-        print("did the algo send?2")
-        # Now update key_state based on the direction
+        check_facing
+
+
         if move == (-1, 0):
-            key_state["up"] = True
+            #move west
+            if orientation > 357 and orientation < 3:
+                key_state["forward"] = True
+                key_state["turn_left"] = False
+                key_state["turn_right"] = False
+            elif orientation < 357 and orientation > 180:
+                key_state["forward"] = False
+                key_state["turn_left"] = False
+                key_state["turn_right"] = True
+            elif orientation < 180 and orientation > 3:
+                key_state["forward"] = False
+                key_state["turn_left"] = True
+                key_state["turn_right"] = False
         elif move == (1, 0):
-            key_state["down"] = True
+            #move east
+            if orientation > 177 and orientation < 183:
+                key_state["forward"] = True
+                key_state["turn_left"] = False
+                key_state["turn_right"] = False
+            elif orientation < 177 and orientation > 0:
+                key_state["forward"] = False
+                key_state["turn_left"] = False
+                key_state["turn_right"] = True
+            elif orientation < 360 and orientation > 183:
+                key_state["forward"] = False
+                key_state["turn_left"] = True
+                key_state["turn_right"] = False
         elif move == (0, -1):
-            key_state["left"] = True
+            #move south
+            if orientation > 267 and orientation < 273:
+                key_state["forward"] = True
+                key_state["turn_left"] = False
+                key_state["turn_right"] = False
+            elif orientation < 267 and orientation > 90:
+                key_state["forward"] = False
+                key_state["turn_left"] = False
+                key_state["turn_right"] = True
+            elif orientation < 90 and orientation > 273:
+                key_state["forward"] = False
+                key_state["turn_left"] = True
+                key_state["turn_right"] = False
         elif move == (0, 1):
-            key_state["right"] = True
-        print("did the algo send?5")
+            #move north
+            if orientation > 87 and orientation < 93:
+                key_state["forward"] = True
+                key_state["turn_left"] = False
+                key_state["turn_right"] = False
+            elif orientation < 87 and orientation > 270:
+                key_state["forward"] = False
+                key_state["turn_left"] = False
+                key_state["turn_right"] = True
+            elif orientation < 93 and orientation > 270:
+                key_state["forward"] = False
+                key_state["turn_left"] = True
+                key_state["turn_right"] = False
+    
+        
+        if slowmode == True:
+            key_state["slowmode"] = True
+        elif slowmode == False:
+            key_state["slowmode"] = False    
+
+     
         # Send the command to the robot
         client_socket.send((json.dumps(key_state) + '\n').encode())
-        print("did the algo send?4")
+        
         # After 0.5 seconds, stop the robot
-        time.sleep(0.5)
-        reset_key_state()  # You need to define this function
-        print("did the algo send?")
-        client_socket.send((json.dumps(key_state) + '\n').encode())
+        #time.sleep(0.5)
+        #reset_key_state()  # You need to define this function
+       
+        #client_socket.send((json.dumps(key_state) + '\n').encode())
         print("did the algo send? --- yes")
 
 def reset_key_state():
@@ -199,7 +255,7 @@ def receive_tracking_data():
                         print(path_to_nearest_ball)  # Gives the path from robot to nearest ball
 
                         #robot moveinggg
-                        move_robot(path_to_nearest_ball)
+                        move_robot(path_to_nearest_ball, orientation)
                     except OSError:
                         print("Warning: Pathing algorithm didn't work.")
                         break
