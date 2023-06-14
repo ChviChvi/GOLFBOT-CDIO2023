@@ -51,12 +51,49 @@ def bfs(graph, start ):
                     neighbor.parent = node
                 
 
+def findmaxx(coordinates):
+    maxx = 0
+    for coordinate in coordinates:
+        if coordinate.x > maxx:
+            maxx = coordinate.x
+    return maxx
+
+def findminx(coordinates):
+    minx = 0
+    for coordinate in coordinates:
+        if coordinate.x > minx:
+            minx = coordinate.x
+    return minx
+
+def findminy(coordinates):
+    miny = 0
+    for coordinate in coordinates:
+        if coordinate.y > miny:
+            miny = coordinate.y
+    return miny
+
+def findmaxy(coordinates):
+    maxy = 0
+    for coordinate in coordinates:
+        if coordinate.y > maxy:
+            maxy = coordinate.y
+    return maxy
+
+
+
+
+
 #Returns the path from ball to robot in coordinates
 #Doesnt take edges or corners into account yet
 #Prints the path 
 def pathtoball( maxx, maxy , robot_coordinates,ball_coordinates, cross_coordinates):
 
-    
+    crossymin = findminy(cross_coordinates)
+    crossxmax = findmaxx(cross_coordinates)
+    crossxmin = findminx(cross_coordinates)
+    crossymax = findmaxy(cross_coordinates) 
+
+
     grid = []   # Create an empty list to store rows
 
     value=1
@@ -72,13 +109,13 @@ def pathtoball( maxx, maxy , robot_coordinates,ball_coordinates, cross_coordinat
         for j in range(len(grid[i])):
             neighbors = []
 
-            if i > 0:
+            if i > 0 and (j > crossmaxx or j < crossminx):
                 neighbors.append(grid[i - 1][j])
-            if i < len(grid) - 1:
+            if i < len(grid) - 1 and (j > crossmaxx or j < crossminx):
                 neighbors.append(grid[i + 1][j])
-            if j > 0:
+            if j > 0 and (i > crossmaxy or j < crossminy):
                 neighbors.append(grid[i][j - 1])
-            if j < len(grid[i]) - 1:
+            if j < len(grid[i]) - 1 and (i > crossmaxy or j < crossminy):
                 neighbors.append(grid[i][j + 1])
 
             grid[i][j].neighbors = neighbors
@@ -102,9 +139,16 @@ def pathtoball( maxx, maxy , robot_coordinates,ball_coordinates, cross_coordinat
 
        
 #Testing
-robotC=Coordinate(2,2)
+a = Coordinate(2,2)
+b = Coordinate(3,2)
+c = Coordinate(4,2)
+d = Coordinate(3,3)
+e = Coordinate(1,2)
+
+cross_coordinates = [a,b,c,d,e]
+robotC=Coordinate(1,1)
 ballC= Coordinate(7,5)
-pathtoball(10,10,robotC,ballC)
+pathtoball(10,10,robotC,ballC,cross_coordinates)
 
 
 
