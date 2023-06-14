@@ -5,6 +5,9 @@ def heuristic(a, b):
     return abs(b[0] - a[0]) + abs(b[1] - a[1])
 
 def astar(grid, start, goal):
+    if goal is None:
+        return None, None
+        
     start = tuple(start)
     goal = tuple(goal)
     frontier = []

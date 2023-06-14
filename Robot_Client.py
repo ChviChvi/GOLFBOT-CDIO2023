@@ -303,9 +303,9 @@ def receive_tracking_data():
                         orientation = received_data["orientation"]
                         print(f"orientation is (90 is north): {orientation}")
 
-                        path_to_nearest_ball = None
-                        robot_position = None
-                        nearest_ball = None
+                        # path_to_nearest_ball = None
+                        # robot_position = None
+                        # nearest_ball = None
                         
 
                         try:
@@ -318,20 +318,33 @@ def receive_tracking_data():
 
                             # Find nearest ball
                             balls = white_balls + orange_balls  # if you also consider orange balls
-                            if robot_position is not None:
-                                nearest_ball = find_nearest_ball(grid, robot_position, balls)
-                            else:
-                              print("No robot position")  
+
+                                                        
+                            nearest_ball = find_nearest_ball(grid, robot_position, balls)
+                           
                             
-                            if nearest_ball is None:
-                                print("No balls left")
-                            else:
                                
-                                came_from, cost_so_far = astar(grid, robot_position, nearest_ball)
-                                path_to_nearest_ball = reconstruct_path(came_from, robot_position, nearest_ball)
-                                #print(path_to_nearest_ball)  # Gives the path from robot to nearest ball
-                                #robot moveinggg
-                                move_robot(path_to_nearest_ball, orientation)
+                            came_from, cost_so_far = astar(grid, robot_position, nearest_ball)
+                            path_to_nearest_ball = reconstruct_path(came_from, robot_position, nearest_ball)
+                                 #print(path_to_nearest_ball)  # Gives the path from robot to nearest ball
+                                 #robot moveinggg
+                            move_robot(path_to_nearest_ball, orientation)
+
+                            
+                            # if robot_position is not None:
+                            nearest_ball = find_nearest_ball(grid, robot_position, balls)
+                            # else:
+                            #   print("No robot position")  
+                            
+                            # if nearest_ball is None:
+                            #     print("No balls left")
+                            # else:
+                               
+                            #     came_from, cost_so_far = astar(grid, robot_position, nearest_ball)
+                            #     path_to_nearest_ball = reconstruct_path(came_from, robot_position, nearest_ball)
+                            #     #print(path_to_nearest_ball)  # Gives the path from robot to nearest ball
+                            #     #robot moveinggg
+                            #     move_robot(path_to_nearest_ball, orientation)
                         except OSError:
                             print("Warning: Pathing algorithm didn't work.")
                             break
