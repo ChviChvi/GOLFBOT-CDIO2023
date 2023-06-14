@@ -54,7 +54,7 @@ def bfs(graph, start ):
 #Returns the path from ball to robot in coordinates
 #Doesnt take edges or corners into account yet
 #Prints the path 
-def pathtoball( maxx, maxy , robot_coordinates,ball_coordinates):
+def pathtoball( maxx, maxy , robot_coordinates,ball_coordinates, cross_coordinates):
 
     
     grid = []   # Create an empty list to store rows
