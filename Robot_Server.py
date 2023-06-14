@@ -42,38 +42,40 @@ try:
                     left_motor_speed = 0
                     right_motor_speed = 0
                     motor_speed = 0
-                    claw_speed = 0
+                    claw_speed = 23
+
 
                     # check if key exists in command before trying to access it
-                    # if 'up' in command and command['up']:
-                    #     left_motor_speed += 50
-                    #     right_motor_speed += 50
-                    #     claw_speed = 25
-                    # if 'down' in command and command['down']:
-                    #     left_motor_speed -= 50
-                    #     right_motor_speed -= 50
-                    # if 'left' in command and command['left']:
-                    #     left_motor_speed += 50
-                    #     right_motor_speed -= 50
-                    # if 'right' in command and command['right']:
-                    #     left_motor_speed -= 50
-                    #     right_motor_speed += 50
-                    # if 'o' in command and command['o']:
-                    #     motor_speed = 25
-                    # if 'p' in command and command['p']:
-                    #     motor_speed = -25
-                    if 'up' in command and command['up']:
-                        tank.on_for_degrees(50, 50, 90)
-                    if 'down' in command and command['down']:
-                        tank.on_for_degrees(-50, -50, 90)
-                    if 'left' in command and command['left']:
-                        tank.on_for_degrees(-50, 50, 90)
-                    if 'right' in command and command['right']:
-                        tank.on_for_degrees(50, -50, 90)
+                    if 'forward' in command and command['forward']:
+                        left_motor_speed += 25
+                        right_motor_speed += 25
+                        claw_speed = 25
+                    if 'backward' in command and command['backward']:
+                        left_motor_speed -= 10
+                        right_motor_speed -= 10
+                    if 'turn_left' in command and command['turn_left']:
+                        left_motor_speed += 5
+                        right_motor_speed -= 5
+                    if 'turn_right' in command and command['turn_right']:
+                        left_motor_speed -= 5
+                        right_motor_speed += 5
                     if 'o' in command and command['o']:
-                        medium_motor_2.on_for_degrees(25, 90)
+                        motor_speed = 25
                     if 'p' in command and command['p']:
-                        medium_motor_2.on_for_degrees(-25, 90)
+                        motor_speed = -25
+
+                    # if 'up' in command and command['up']:
+                    #     tank.on_for_degrees(50, 50, 90)
+                    # if 'down' in command and command['down']:
+                    #     tank.on_for_degrees(-50, -50, 90)
+                    # if 'left' in command and command['left']:
+                    #     tank.on_for_degrees(-50, 50, 90)
+                    # if 'right' in command and command['right']:
+                    #     tank.on_for_degrees(50, -50, 90)
+                    # if 'o' in command and command['o']:
+                    #     medium_motor_2.on_for_degrees(25, 90)
+                    # if 'p' in command and command['p']:
+                    #     medium_motor_2.on_for_degrees(-25, 90)
 
                     tank.on(left_motor_speed, right_motor_speed)
                     medium_motor_2.on(motor_speed)
