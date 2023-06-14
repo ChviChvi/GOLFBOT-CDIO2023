@@ -159,8 +159,8 @@ try:
                 hsv_values = get_hsv_values(frame)
 
                 # get the min and max HSV values based on the selected HSV values
-                lower = [max(0, x - 8) for x in hsv_values]
-                upper = [min(255, x + 8) for x in hsv_values]
+                lower = [max(0, x - 10) for x in hsv_values]
+                upper = [min(255, x + 10) for x in hsv_values]
 
                 print(lower)
                 print(upper)
@@ -311,7 +311,7 @@ try:
                     continue
                 ball_center = get_center_of_contour(contour)
                 if ball_center is not None and cv2.pointPolygonTest(polygon, ball_center, False) >= 0:
-                    cv2.circle(frame, ball_center, 5, (255, 0, 0), -1)
+                    cv2.circle(frame, ball_center, 5, (0, 255, 0), -1)
                     orange_balls_position.append((ball_center[0] - polygon[0][0], polygon[0][1] - ball_center[1]))
 
             if time.time() - last_send_time >= 1:  # Send the data every second
