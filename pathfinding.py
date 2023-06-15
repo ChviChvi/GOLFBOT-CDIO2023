@@ -6,8 +6,7 @@ def heuristic(a, b):
 
 def astar(grid, start, goal):
     if goal is None:
-        return None, None
-        
+        return None,None
     start = tuple(start)
     goal = tuple(goal)
     frontier = []
@@ -28,8 +27,17 @@ def astar(grid, start, goal):
                 priority = new_cost + heuristic(goal, next)
                 heapq.heappush(frontier, (priority, next))
                 came_from[next] = current
+                
 
-    return came_from, cost_so_far
+                if next not in came_from:
+                    came_from[next] = current
+    
+    print(l(came_from))
+
+    if current == goal:
+        return came_from, cost_so_far, True
+    else:
+        return came_from, cost_so_far, False
 
 def get_neighbors(grid, current):
     dirs = [(0, 1), (0, -1), (1, 0), (-1, 0), (-1, -1), (1, 1), (-1, 1), (1, -1)]

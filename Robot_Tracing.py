@@ -69,13 +69,16 @@ def get_hsv_values(frame):
 
 #   This function draws the 4 cornes at the start
 def draw_ROI(frame):
-    fig,ax = plt.subplots(1)
+    fig, ax = plt.subplots(1, figsize=(8, 6))
     ax.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))  # Convert color for matplotlib display
     ROI = plt.ginput(4)  # Select the 4 corners of your rectangle
     if len(ROI) > 0:  # Check if ROI is not empty
         ROI.append(ROI[0])  # add the first point to the end to close the rectangle
         rect = patches.Polygon(ROI, linewidth=1, edgecolor='r', facecolor='none')  # Create a Rectangle patch
         ax.add_patch(rect)  # Add the patch to the Axes
+
+        ax.scatter([p[0] for p in ROI[:-1]], [p[1] for p in ROI[:-1]], c='r', s=10) # Increase the 's' value to make the markers bigger
+
         plt.show()
     else:
         print("No valid points were selected.")
@@ -143,6 +146,10 @@ try:
 
 
         frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
+        new_width = frame_width // 2
+        new_height = frame_height // 2
+        frame = cv2.resize(frame, (new_width, new_height))
+
 
         
         if frame_corners is None:
@@ -152,7 +159,7 @@ try:
                 # Calculate grid size
                 max_x = max(p[0] for p in frame_corners)
                 max_y = max(p[1] for p in frame_corners)
-                grid_size = (max_x, max_y)
+                grid_size = ((max_x), (max_y))
         if hsv_ranges == {}:
             for color in colors:
                 print(f"Select HSV values for {color}")
@@ -212,8 +219,8 @@ try:
                 robot_front = get_center_of_contour(robot_contour)
 
                 if robot_front is not None and cv2.pointPolygonTest(polygon, robot_front, False) >= 0:
-                    cv2.circle(frame, robot_front, 5, (255, 0, 0), -1)
-                    robot_position = (robot_front[0] - polygon[0][0], polygon[0][1] - robot_front[1])
+                    cv2.circle(frame, robot_front, 5, (255, 0, 0), -1)           
+                    robot_position = ((robot_front[0] - polygon[0][0]), (polygon[0][1] - robot_front[1]))
                     if time.time() - last_robot_print_time >= 3:
                     #  back_position = (robot_position[0] - robot_vector[0] / 2, robot_position[1] - robot_vector[1] / 2)
                     #  front_position = (robot_position[0] + robot_vector[0] / 2, robot_position[1] + robot_vector[1] / 2)
@@ -281,7 +288,7 @@ try:
                 ball_center = get_center_of_contour(contour)
                 if ball_center is not None and cv2.pointPolygonTest(polygon, ball_center, False) >= 0:
                     cv2.circle(frame, ball_center, 5, (0, 165, 255), -1)
-                    balls_position.append((ball_center[0] - polygon[0][0], polygon[0][1] - ball_center[1]))
+                    balls_position.append(((ball_center[0] - polygon[0][0]), (polygon[0][1] - ball_center[1])))
             
             #assign_ids_to_balls(balls_position)  # NEW
 
@@ -312,7 +319,7 @@ try:
                 ball_center = get_center_of_contour(contour)
                 if ball_center is not None and cv2.pointPolygonTest(polygon, ball_center, False) >= 0:
                     cv2.circle(frame, ball_center, 5, (0, 255, 0), -1)
-                    orange_balls_position.append((ball_center[0] - polygon[0][0], polygon[0][1] - ball_center[1]))
+                    orange_balls_position.append(((ball_center[0] - polygon[0][0]), (polygon[0][1] - ball_center[1])))
 
             if time.time() - last_send_time >= 1:  # Send the data every second
                 print(f"Robot Degrees: {robot_degrees}")

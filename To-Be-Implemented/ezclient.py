@@ -1,9 +1,58 @@
 import socket
+import sys
+sys.path.append('/Users/Villads/Visualstudio/CDIO2023')
 from pynput.keyboard import Key, Listener
 import json
 import threading
 import time 
-from pathfinding import astar, find_nearest_ball, reconstruct_path
+#from pathfinding import astar
+from Path import find_nearest_ball, reconstruct_path, astar
+
+
+key_state = {
+    "forward": False,
+    "backward": False,
+    "turn_left": False,
+    "turn_right": False,
+    "o": False,
+    "p": False
+}
+
+def on_press(key):
+    print(f"Key pressed: {key}")
+    try:
+        if key.char == 'o':
+            key_state['o'] = True
+        elif key.char == 'p':
+            key_state['p'] = True
+    except AttributeError:
+        if key == Key.up:
+            key_state['up'] = True
+        elif key == Key.down:
+            key_state['down'] = True
+        elif key == Key.left:
+            key_state['left'] = True
+        elif key == Key.right:
+            key_state['right'] = True
+    client_socket.send((json.dumps(key_state) + '\n').encode())
+
+def on_release(key):
+
+    try:
+        if key.char == 'o':
+            key_state['o'] = False
+        elif key.char == 'p':
+            key_state['p'] = False
+    except AttributeError:
+        if key == Key.up:
+            key_state['up'] = False
+        elif key == Key.down:
+            key_state['down'] = False
+        elif key == Key.left:
+            key_state['left'] = False
+        elif key == Key.right:
+            key_state['right'] = False
+    client_socket.send((json.dumps(key_state) + '\n').encode())
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -33,6 +82,96 @@ robot_connection_thread = threading.Thread(target=connect_to_robot)
 robot_connection_thread.start()
 
 # Create another client socket to connect to Tracing5.py
+
+def receive_tracking_data():
+    data = ""
+    while True:
+        try:
+            chunk = tracking_socket.recv(1024).decode()
+            data += chunk
+
+            if '\n' in chunk:  # If newline is received
+                lines = data.split('\n')
+
+                # If the data ended exactly with '\n', there will be an extra empty line at the end
+                if not lines[-1]:  
+                    lines.pop()
+
+                # Process each line (each complete message)
+                for line in lines:
+                    received_data = json.loads(line.rstrip())
+
+                    if 'red_crosses' in received_data:
+                        red_crosses = received_data["red_crosses"]
+                        print(f"THE RED CROSS IS AT: {red_crosses}")
+
+                    if 'white_balls' in received_data:
+                        white_balls = received_data["white_balls"]
+                        print(f"Received white balls positions: {white_balls}")
+
+                    if 'orange_balls' in received_data:
+                        orange_balls = received_data["orange_balls"]
+                        print(f"Received orange balls positions: {orange_balls}")
+
+                    if 'robot' in received_data:
+                        robot_position = received_data['robot']
+                        print(f"Received robot position: {robot_position}")
+
+                    if 'grid_size' in received_data:
+                        grid_size = received_data["grid_size"]
+                        print(f"SIZE OF THE GRID IS: {grid_size}")
+
+                    if 'orientation' in received_data:
+                        orientation = received_data["orientation"]
+                        print(f"orientation is (90 is north): {orientation}")
+
+                        try:
+                            
+                            # Initialize grid
+                            grid = [[0 for _ in range(grid_size[1])] for _ in range(grid_size[0])]
+
+                            # Mark red crosses on the grid
+                            
+                            for cross in red_crosses:
+                                grid[(cross[0])][(cross[1])] = 1  # 1 represents red cross
+
+                            # Find nearest ball
+                            
+                            nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
+                            #balls = white_balls and orange_balls  # if you also consider orange balls
+
+                            print("astar")
+                            print(robot_position)
+                            print(nearest_ball)
+                            came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
+                            print("hej")
+
+                            if goal_reached:
+                                path_to_nearest_ball = reconstruct_path(came_from, robot_position, nearest_ball)
+                                
+                            else:
+                                print("No valid path to the goal")
+                            print(20)
+                            print(came_from)
+                            print(robot_position)
+                            print(nearest_ball)
+                            path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
+                            print(path_to_nearest_ball)
+                            move_robot(path_to_nearest_ball, orientation)
+                            print(22)
+                            # Find nearest ball again after moving the robot
+                            nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
+                            print(23)
+                        except OSError:
+                            print("Warning: Pathing algorithm didn't work.")
+                            break
+
+                # Clean data for next reading
+                data = ""
+        except OSError:
+            print("Warning: Cannot receive data from tracking server.")
+            break
+
 tracking_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 def connect_to_tracking():
@@ -47,7 +186,6 @@ def connect_to_tracking():
             print("Press O and P to control the second medium motor.")
             print("Press Ctrl+C to stop the client.")
             threading.Thread(target=receive_tracking_data, daemon=True).start()  # Start receiving data
-
             while True:  # Check for active connection
                 try:
                     tracking_socket.send(b'ping')  # Test send data
@@ -61,18 +199,15 @@ def connect_to_tracking():
             print(f"Unexpected error while connecting to tracking: {e}")
         time.sleep(5)  # Delay for 5 seconds before retrying
 
-tracking_connection_thread = threading.Thread(target=connect_to_tracking)
-tracking_connection_thread.start()
 
-key_state = {
-    "forward": False,
-    "backward": False,
-    "turn_left": False,
-    "turn_right": False,
-    "o": False,
-    "p": False
-}
 
+def reset_key_state():
+    key_state['up'] = False
+    key_state['down'] = False
+    key_state['left'] = False
+    key_state['right'] = False
+    key_state['o'] = False
+    key_state['p'] = False
 
 def move_robot(path_to_nearest_ball, orientation):
     print("did the algo send?1")
@@ -215,208 +350,15 @@ def move_robot(path_to_nearest_ball, orientation):
         #client_socket.send((json.dumps(key_state) + '\n').encode())
         print("did the algo send? --- yes")
 
-def reset_key_state():
-    key_state['up'] = False
-    key_state['down'] = False
-    key_state['left'] = False
-    key_state['right'] = False
-    key_state['o'] = False
-    key_state['p'] = False
-
-def on_press(key):
-    print(f"Key pressed: {key}")
-    try:
-        if key.char == 'o':
-            key_state['o'] = True
-        elif key.char == 'p':
-            key_state['p'] = True
-    except AttributeError:
-        if key == Key.up:
-            key_state['up'] = True
-        elif key == Key.down:
-            key_state['down'] = True
-        elif key == Key.left:
-            key_state['left'] = True
-        elif key == Key.right:
-            key_state['right'] = True
-    client_socket.send((json.dumps(key_state) + '\n').encode())
-
-def on_release(key):
-
-    try:
-        if key.char == 'o':
-            key_state['o'] = False
-        elif key.char == 'p':
-            key_state['p'] = False
-    except AttributeError:
-        if key == Key.up:
-            key_state['up'] = False
-        elif key == Key.down:
-            key_state['down'] = False
-        elif key == Key.left:
-            key_state['left'] = False
-        elif key == Key.right:
-            key_state['right'] = False
-    client_socket.send((json.dumps(key_state) + '\n').encode())
-
-def receive_tracking_data():
-    data = ""
-    while True:
-        try:
-            chunk = tracking_socket.recv(1024).decode()
-            data += chunk
-
-            
-
-            if '\n' in chunk:  # If newline is received
-                lines = data.split('\n')
-
-                # If the data ended exactly with '\n', there will be an extra empty line at the end
-                if not lines[-1]:  
-                    lines.pop()
-
-                # Process each line (each complete message)
-                for line in lines:
-                    received_data = json.loads(line.rstrip())
-
-                    if 'red_crosses' in received_data:
-                        red_crosses = received_data["red_crosses"]
-                        print(f"THE RED CROSS IS AT: {red_crosses}")
-
-                    if 'white_balls' in received_data:
-                        white_balls = received_data["white_balls"]
-                        print(f"Received white balls positions: {white_balls}")
-
-                    if 'orange_balls' in received_data:
-                        orange_balls = received_data["orange_balls"]
-                        print(f"Received orange balls positions: {orange_balls}")
-
-                    if 'robot' in received_data:
-                        robot_position = received_data['robot']
-                        print(f"Received robot position: {robot_position}")
-
-                    if 'grid_size' in received_data:
-                        grid_size = received_data["grid_size"]
-                        print(f"SIZE OF THE GRID IS: {grid_size}")
-
-                    if 'orientation' in received_data:
-                        orientation = received_data["orientation"]
-                        print(f"orientation is (90 is north): {orientation}")
-                       
-
-                        try:
-                            # Initialize grid
-                            grid = [[0 for _ in range(grid_size[1])] for _ in range(grid_size[0])]
-
-                            # Mark red crosses on the grid
-                            for cross in red_crosses:
-                                grid[cross[0]][cross[1]] = 1  # 1 represents red cross
-
-                            # Find nearest ball
-                            balls = white_balls + orange_balls  # if you also consider orange balls
-
-                                                        
-                            nearest_ball = find_nearest_ball(grid, robot_position, balls)
-                           
-                            
-                               
-                            came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
-                            
-                                 #print(path_to_nearest_ball)  # Gives the path from robot to nearest ball
-                                 #robot moveinggg
-                            if goal_reached:
-                                path_to_nearest_ball = reconstruct_path(came_from, robot_position, nearest_ball)
-                            else:
-                                print("No valid path to the goal")
-                
-                            move_robot(path_to_nearest_ball, orientation)
-
-                            
-                            # if robot_position is not None:
-                            nearest_ball = find_nearest_ball(grid, robot_position, balls)
-                            # else:
-                            #   print("No robot position")  
-                            
-                            # if nearest_ball is None:
-                            #     print("No balls left")
-                            # else:
-                               
-                            #     came_from, cost_so_far = astar(grid, robot_position, nearest_ball)
-                            #     path_to_nearest_ball = reconstruct_path(came_from, robot_position, nearest_ball)
-                            #     #print(path_to_nearest_ball)  # Gives the path from robot to nearest ball
-                            #     #robot moveinggg
-                            #     move_robot(path_to_nearest_ball, orientation)
-                        except OSError:
-                            print("Warning: Pathing algorithm didn't work.")
-                            break
-
-                # Clean data for next reading
-                data = ""
-        except OSError:
-            print("Warning: Cannot receive data from tracking server.")
-            break
-
-def receive_tracking_datacommentedout():
-    while True:
-        try:
-            data = tracking_socket.recv(1024)
-            if data:
-                received_data = json.loads(data.decode().rstrip())
+tracking_connection_thread = threading.Thread(target=connect_to_tracking)
+tracking_connection_thread.start()
 
 
-                if 'red_crosses' in received_data:
-                    red_crosses = received_data["red_crosses"]
-                    print(f"THE RED CROSS IS AT: {red_crosses}")
-
-                if 'white_balls' in received_data:
-                    white_balls = received_data["white_balls"]
-                    print(f"Received white balls positions: {white_balls}")
-
-                if 'orange_balls' in received_data:
-                    orange_balls = received_data["orange_balls"]
-                    print(f"Received orange balls positions: {orange_balls}")
-
-                if 'robot' in received_data:
-                    robot_position = received_data['robot']
-                    print(f"Received robot position: {robot_position}")
-
-                if 'grid_size' in received_data:
-                    grid_size = received_data["grid_size"]
-                    print(f"SIZE OF THE GRID IS: {grid_size}")
-
-                if 'orientation' in received_data:
-                    orientation = received_data["orientation"]
-                    print(f"orientation is (90 is north): {orientation}")
 
 
-                    
 
-                    try:
-                        # Initialize grid
-                        grid = [[0 for _ in range(grid_size[1])] for _ in range(grid_size[0])]
 
-                        # Mark red crosses on the grid
-                        for cross in red_crosses:
-                            grid[cross[0]][cross[1]] = 1  # 1 represents red cross
 
-                        # Find nearest ball
-                        balls = white_balls + orange_balls  # if you also consider orange balls
-                        nearest_ball = find_nearest_ball(grid, robot_position, balls)
-
-                        # Find path to nearest ball
-                        came_from, cost_so_far = astar(grid, robot_position, nearest_ball)
-                        path_to_nearest_ball = reconstruct_path(came_from, robot_position, nearest_ball)
-
-                        print(path_to_nearest_ball)  # Gives the path from robot to nearest ball
-
-                        #robot moveinggg
-                        move_robot(path_to_nearest_ball, orientation)
-                    except OSError:
-                        print("Warning: Pathing algorithm didn't work.")
-                        break
-        except OSError:
-            print("Warning: Cannot receive data from tracking server.")
-            break
 
 
 
