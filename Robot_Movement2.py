@@ -1,11 +1,13 @@
 def bfs(grid, start, end):
     queue = [((start[0], start[1]), [])]
     seen = set()
+    
 
     while queue:
         ((x, y), path) = queue.pop(0)
         node = (x, y)
         if node not in seen:
+            print(node)
             seen.add(node)
             path = path + [node]
             if node == end:
@@ -15,9 +17,9 @@ def bfs(grid, start, end):
                 print(f"PATH {path}")
 
                 return path
-            for direction in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1,-1), (1,1),(-1,1),(1,-1)]:
-                next_x, next_y = x + direction[0], y + direction[1]
-                queue.append(((next_x, next_y), path))
+        for direction in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1,-1), (1,1),(-1,1),(1,-1)]:
+            next_x, next_y = x + direction[0], y + direction[1]
+            queue.append(((next_x, next_y), path))
 
     return None
 

@@ -6,6 +6,7 @@ import time
 from path import find_nearest_ball, reconstruct_path, astar
 from Robot_Movement import get_orientation_and_target, calculate_distance
 from Robot_Movement2 import find_path
+from path import find_nearest_ball, reconstruct_path, astar
 
 
 key_state = {
@@ -152,27 +153,38 @@ def receive_tracking_data():
                         print(f"orientation is (90 is north): {orientation}")
                         print("-------------- CALCULATION FROM HERE ------------")
                         try:
-
+                            '''
                             if Balls_container == 5:
                                 goal = (grid_size[0]-3,grid_size[1]/2)
                                 print("TO THE GOAL")
-                                goalpath = find_goal(grid_size, robot_position, ,red_crosses)
+                                goalpath = find_goal(grid_size, robot_position, red_crosses)
                                 move_robot(goalpath, orientation)
+                            '''
+                            #path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
+                            #move_robot(path, orientation)
+                            grid = [[0 for _ in range(grid_size[1])] for _ in range(grid_size[0])]
 
-                            path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
-                            move_robot(path, orientation)
+                            # Mark red crosses on the grid
+                            
+                            for cross in red_crosses:
+                                grid[(cross[0])][(cross[1])] = 1 
+                            nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
+                            came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
+                            path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
+                            print(path_to_nearest_ball)
+                            move_robot(path_to_nearest_ball, orientation)
                             
                         
 
                             
                             # Here we find which way the robot has to turn, and to which coordinate that is
-                            elif not calculation:#robot_turnto is None and ball_target is None:
+                            #elif not calculation:#robot_turnto is None and ball_target is None:
                                 #print("-------------- IF ORIENTATION ------------")
                                 #path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
                                 
                                 #print(f"path to nearest ball!!!!! ------------ {path}")
-                                if path is not None:
-                                    calculation = True
+                                #if path is not None:
+                                   # calculation = True
                                 # if not calculation:
                                 #     print("-------------- IF ORIENTATION ------------")
                                 #     robot_turnto, ball_target = get_orientation_and_target(robot_position, orientation, grid_size, white_balls, orange_balls, red_crosses)
