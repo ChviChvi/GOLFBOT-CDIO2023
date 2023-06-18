@@ -42,27 +42,27 @@ try:
                     left_motor_speed = 0
                     right_motor_speed = 0
                     motor_speed = 0
-                    claw_speed = 23
+                    claw_speed = 35
 
 
                     # check if key exists in command before trying to access it
                     if 'forward' in command and command['forward']:
-                        left_motor_speed += 25
-                        right_motor_speed += 25
-                        claw_speed = 25
+                        left_motor_speed += 15
+                        right_motor_speed += 15
+                        claw_speed = 35
                     if 'backward' in command and command['backward']:
                         left_motor_speed -= 10
                         right_motor_speed -= 10
                     if 'turn_left' in command and command['turn_left']:
-                        left_motor_speed += 5
-                        right_motor_speed -= 5
+                        left_motor_speed += 2
+                        right_motor_speed -= 2
                     if 'turn_right' in command and command['turn_right']:
-                        left_motor_speed -= 5
-                        right_motor_speed += 5
+                        left_motor_speed -= 2
+                        right_motor_speed += 2
                     if 'o' in command and command['o']:
-                        motor_speed = 25
+                        motor_speed = 20
                     if 'p' in command and command['p']:
-                        motor_speed = -25
+                        motor_speed = -20
 
                     # if 'up' in command and command['up']:
                     #     tank.on_for_degrees(50, 50, 90)
@@ -85,11 +85,16 @@ try:
                     pass
 
             except socket.error:
-                print("Error reading from socket.")
-                break
+                print("Connection lost. Attempting to reconnect...")
+                client_socket.close()
+                break  # This breaks the inner while loop and goes back to waiting for a new connection
+
+
+
+            
         
-        client_socket.close()
-        print("Client disconnected.")
+        #client_socket.close()
+        #print("Client disconnected.")
 except KeyboardInterrupt:
     # Stop the motors when the server is stopped
     tank.off()
