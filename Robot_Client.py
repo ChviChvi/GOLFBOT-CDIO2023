@@ -127,6 +127,7 @@ def receive_tracking_data():
                     if 'white_balls' in received_data:
                         white_balls = received_data["white_balls"]
                         print(f"Received white balls positions: {white_balls}")
+                        Balls_container = 10 -len(white_balls) 
 
                     if 'orange_balls' in received_data:
                         orange_balls = received_data["orange_balls"]
@@ -146,11 +147,16 @@ def receive_tracking_data():
                         print("-------------- CALCULATION FROM HERE ------------")
                         try:
 
+                            if Balls_container == 5:
+                                goal = (grid_size[0]-3,grid_size[1]/2)
+                                print("TO THE GOAL")
+                                goalpath = find_goal(grid_size, robot_position, ,red_crosses)
+                                move_robot(goalpath, orientation)
+
                             path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
                             move_robot(path, orientation)
                             
-                            if Balls_container == 5:
-                                print("TO THE GOAL")
+                        
 
                             
                             # Here we find which way the robot has to turn, and to which coordinate that is
@@ -436,7 +442,7 @@ def move_robot(path_to_nearest_ball, orientation):
         #TODO insert code tht checks if the robot is near a wall/obstacle
 
         if move[0] == -1 and move[1] == 0: # move West
-            if 357 < orientation < 3:
+            if 357 < orientation or orientation < 3:
                 key_state["forward"] = True
                 key_state["turn_left"] = False
                 key_state["turn_right"] = False
