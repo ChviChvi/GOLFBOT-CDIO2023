@@ -146,19 +146,21 @@ def receive_tracking_data():
                         print("-------------- CALCULATION FROM HERE ------------")
                         try:
 
-
+                            path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
+                            move_robot(path, orientation)
+                            
                             if Balls_container == 5:
                                 print("TO THE GOAL")
 
                             
                             # Here we find which way the robot has to turn, and to which coordinate that is
                             elif not calculation:#robot_turnto is None and ball_target is None:
-                                print("-------------- IF ORIENTATION ------------")
-                                path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
+                                #print("-------------- IF ORIENTATION ------------")
+                                #path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
                                 
                                 #print(f"path to nearest ball!!!!! ------------ {path}")
-
-                                calculation = True
+                                if path is not None:
+                                    calculation = True
                                 # if not calculation:
                                 #     print("-------------- IF ORIENTATION ------------")
                                 #     robot_turnto, ball_target = get_orientation_and_target(robot_position, orientation, grid_size, white_balls, orange_balls, red_crosses)
@@ -169,8 +171,10 @@ def receive_tracking_data():
                                 #     facing_ball = False
                             # here we check if the robot has reached
 
-                            elif calculation:
-                                move_robot(path, orientation)
+                            #elif calculation:
+                                #if robot_position == path[1]:
+                                #    path.pop
+                                #move_robot(path, orientation)
                         
                             # elif not facing_ball:
                             #     if orientation is not None and robot_turnto is not None:
@@ -192,15 +196,6 @@ def receive_tracking_data():
                             #             ball_target = None
                             #             reached_ball = False
                             #             calculation = False
-
-                            
-                        
-                            
-                                
-
-
-                            
-
 
                             # # Initialize grid
                             # grid = [[0 for _ in range(grid_size[1])] for _ in range(grid_size[0])]
@@ -374,7 +369,7 @@ def align_orientation(robot_orientation, target_orientation, facing_ball):
 
     return key_state, facing_ball
 
-def convert_path_to_directions(path):
+def convert_path_to_directions1(path):
     directions = []
     for i in range(1, len(path)):
         current = path[i - 1]
@@ -389,6 +384,24 @@ def convert_path_to_directions(path):
             direction = (1 if dx > 0 else -1, 1 if dy > 0 else -1)
         directions.append(direction)
     return directions
+
+def convert_path_to_directions(path):
+    if len(path) > 1:
+        current = path[0]
+        next_pos = path[1]
+        dx = next_pos[0] - current[0]
+        dy = next_pos[1] - current[1]
+        if dx == 0:
+            direction = (0, 1 if dy > 0 else -1)  # moving vertically
+        elif dy == 0:
+            direction = (1 if dx > 0 else -1, 0)  # moving horizontally
+        else:
+            direction = (1 if dx > 0 else -1, 1 if dy > 0 else -1)  # moving diagonally
+        print(f'DIRECTIOON!{direction}')
+        return direction
+    else:
+        raise ValueError('Path should contain at least two points.')
+
 
 
 
@@ -418,7 +431,7 @@ def move_robot(path_to_nearest_ball, orientation):
         # print(f"current_pos {current_pos}")
         # slowmode = False
         #move = (next_move[0]-current_pos[0], next_move[1]-current_pos[1])  # Calculate the difference to determine the direction
-        move = directions[0]
+        move = directions
         print(f"move {move}")
         #TODO insert code tht checks if the robot is near a wall/obstacle
 

@@ -9,6 +9,11 @@ def bfs(grid, start, end):
             seen.add(node)
             path = path + [node]
             if node == end:
+
+                print(f"START {start}")
+                print(f"END {end}")
+                print(f"PATH {path}")
+
                 return path
             for direction in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
                 next_x, next_y = x + direction[0], y + direction[1]
@@ -51,8 +56,10 @@ def find_path(grid_size, robot_position, white_balls, orange_balls, red_crosses)
             break
 
         print("Finding path to ball: ", closest_ball)
-        start = (robot_position[0], grid_size[1] - robot_position[1])
-        goal = (closest_ball[0], grid_size[1] - closest_ball[1])
+        start = (robot_position[0],  robot_position[1])
+        goal = (closest_ball[0],  closest_ball[1])
+        # start = (robot_position[0], grid_size[1] - robot_position[1])
+        # goal = (closest_ball[0], grid_size[1] - closest_ball[1])
         path = bfs(grid, start, goal)
         if path is not None:
             shortest_path = path
