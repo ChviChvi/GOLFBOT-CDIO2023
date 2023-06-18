@@ -462,23 +462,23 @@ try:
                     "orientation": None if robot_degrees is None else float(robot_degrees)
                 }
 
-                # scale_factor = 10  # Adjust this value according to your needs
+                scale_factor = 10  # Adjust this value according to your needs
 
-                # scaled_data = {
-                #     "white_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["white_balls"]],
-                #     "orange_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["orange_balls"]],
-                #     "robot": None if data["robot"] is None else (int(data["robot"][0] / scale_factor), int(data["robot"][1] / scale_factor)),
-                #     "red_crosses": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["red_crosses"]],
-                #     "grid_size": None if data["grid_size"] is None else (int(data["grid_size"][0] / scale_factor), int(data["grid_size"][1] / scale_factor)),
-                #     "orientation": data["orientation"]
-                # }
+                scaled_data = {
+                    "white_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["white_balls"]],
+                    "orange_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["orange_balls"]],
+                    "robot": None if data["robot"] is None else (int(data["robot"][0] / scale_factor), int(data["robot"][1] / scale_factor)),
+                    "red_crosses": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["red_crosses"]],
+                    "grid_size": None if data["grid_size"] is None else (int(data["grid_size"][0] / scale_factor), int(data["grid_size"][1] / scale_factor)),
+                    "orientation": data["orientation"]
+                }
 
                 # Remove any None values
-                data = {k: v for k, v in data.items() if v is not None}
+                scaled_data = {k: v for k, v in scaled_data.items() if v is not None}
 
                 if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
                     try:
-                        client_socket.send((json.dumps(data) + '\n').encode())
+                        client_socket.send((json.dumps(scaled_data) + '\n').encode())
                     except Exception as e: 
                         print(f"Error sending data: {e}")
                         connection_event.clear()  

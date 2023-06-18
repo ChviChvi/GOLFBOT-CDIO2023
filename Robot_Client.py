@@ -60,7 +60,7 @@ def connect_to_robot():
         try:
             print("Connecting to robot...")
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Moved inside the loop to create new socket on reconnection
-            client_socket.connect(("172.20.10.5", 1234))  # Replace with your EV3's IP address
+            client_socket.connect(("192.168.155.146", 1234))  # Replace with your EV3's IP address
             print("Connected to robot!")
             
             while True:  # Check for active connection
@@ -82,7 +82,13 @@ robot_connection_thread.start()
 
 
 
+
+
+
 def receive_tracking_data():
+    
+    
+
     data = ""
 
     robot_turnto = None
@@ -254,6 +260,7 @@ def receive_tracking_data():
         except OSError:
             print("Warning: Cannot receive data from tracking server.")
             break
+
 
 tracking_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -436,7 +443,7 @@ def move_robot(path_to_nearest_ball, orientation):
         #TODO insert code tht checks if the robot is near a wall/obstacle
 
         if move[0] == -1 and move[1] == 0: # move West
-            if 357 < orientation < 3:
+            if 357 < orientation or orientation < 3:
                 key_state["forward"] = True
                 key_state["turn_left"] = False
                 key_state["turn_right"] = False
