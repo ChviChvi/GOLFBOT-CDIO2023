@@ -15,7 +15,7 @@ def bfs(grid, start, end):
                 print(f"PATH {path}")
 
                 return path
-            for direction in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
+            for direction in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1,-1), (1,1),(-1,1),(1,-1)]:
                 next_x, next_y = x + direction[0], y + direction[1]
                 queue.append(((next_x, next_y), path))
 
