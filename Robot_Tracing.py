@@ -145,7 +145,7 @@ def draw_ROI(frame):
 
 
 print("Waiting for camera...")
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0 , )
 print("Camera is on!")
 
 
@@ -224,8 +224,8 @@ try:
 
         
         frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
-        new_width = int(frame_width / 2)
-        new_height = int(frame_height / 2)
+        new_width = int(frame_width )
+        new_height = int(frame_height )
         frame = cv2.resize(frame, (new_width, new_height))
         
         #grid_size = (new_width, new_height) 

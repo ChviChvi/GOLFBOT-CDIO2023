@@ -73,13 +73,16 @@ def get_neighbors(grid, position):
     x, y = position
     neighbors = []
 
-    if x > 0 and grid[x-1][y] != 1:  # Check left neighbor
-        neighbors.append((x-1, y))
-    if x < len(grid)-1 and grid[x+1][y] != 1:  # Check right neighbor
-        neighbors.append((x+1, y))
-    if y > 0 and grid[x][y-1] != 1:  # Check top neighbor
-        neighbors.append((x, y-1))
-    if y < len(grid[0])-1 and grid[x][y+1] != 1:  # Check bottom neighbor
-        neighbors.append((x, y+1))
+    # Check horizontal and vertical neighbors
+    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        nx, ny = x + dx, y + dy
+        if (0 <= nx < len(grid)) and (0 <= ny < len(grid[0])) and (grid[nx][ny] != 1):
+            neighbors.append((nx, ny))
+
+    # Check diagonal neighbors
+    for dx, dy in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+        nx, ny = x + dx, y + dy
+        if (0 <= nx < len(grid)) and (0 <= ny < len(grid[0])) and (grid[nx][ny] != 1):
+            neighbors.append((nx, ny))
 
     return neighbors
