@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import time
 import json
+from collections import deque
 import math
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -28,7 +29,18 @@ def wait_for_connection():
             if not is_exiting:
                 print(f"Error: {e}")
             time.sleep(1)
-
+# def check_connection():
+#     global client_socket
+#     while True:
+#         try:
+#             # Try sending a small test message
+#             client_socket.send((json.dumps({"test": "test"}) + '\n').encode())
+#         except Exception as e:
+#             print("Lost connection, trying to reconnect...")
+#             client_socket = None
+#             connection_event.clear()
+#             wait_for_connection()
+#         time.sleep(1)  # Check every second
 # Create a new server socket
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # Bind the socket to a specific network interface and port number
@@ -43,6 +55,11 @@ connection_thread = threading.Thread(target=wait_for_connection)
 connection_thread.start()
 #connection_event.wait()
 
+# # Start a new thread that checks the connection
+# check_thread = threading.Thread(target=check_connection)
+# check_thread.start()
+
+
 
 
 def get_center_of_contour(contour):
@@ -53,6 +70,8 @@ def get_center_of_contour(contour):
         return (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
 
 def get_hsv_values(frame):
+    #frame = cv2.resize(frame, (new_width, new_height))  # Resize the frame
+    
     # Display the frame in its original BGR colors
     cv2.imshow("Image", frame)
 
@@ -67,31 +86,71 @@ def get_hsv_values(frame):
 
     return hsv_values
 
+def quantize_coordinates(coordinates, cell_size):
+    return [int(coord / cell_size) for coord in coordinates]
+
 #   This function draws the 4 cornes at the start
 def draw_ROI(frame):
-    fig, ax = plt.subplots(1, figsize=(8, 6))
-    ax.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))  # Convert color for matplotlib display
-    ROI = plt.ginput(4)  # Select the 4 corners of your rectangle
-    if len(ROI) > 0:  # Check if ROI is not empty
-        ROI.append(ROI[0])  # add the first point to the end to close the rectangle
-        rect = patches.Polygon(ROI, linewidth=1, edgecolor='r', facecolor='none')  # Create a Rectangle patch
-        ax.add_patch(rect)  # Add the patch to the Axes
+    # Convert the frame to RGB for display
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        ax.scatter([p[0] for p in ROI[:-1]], [p[1] for p in ROI[:-1]], c='r', s=10) # Increase the 's' value to make the markers bigger
+    # Create the figure and axes for plotting
+    fig, ax = plt.subplots(1, figsize=(8, 6))
+    ax.imshow(frame_rgb)
+
+    # Let the user select the 4 corners of the rectangle
+    ROI = plt.ginput(4)
+
+    if len(ROI) > 0:
+        # Convert the ROI to a numpy array
+        ROI = np.array(ROI, dtype=np.float32)
+
+        # Find the minimum and maximum coordinates in each dimension
+        min_x = np.min(ROI[:, 0])
+        max_x = np.max(ROI[:, 0])
+        min_y = np.min(ROI[:, 1])
+        max_y = np.max(ROI[:, 1])
+
+        # Translate the ROI coordinates to have the bottom-left corner as (0, 0)
+        ROI[:, 0] -= min_x
+        ROI[:, 1] -= min_y
+
+        # Convert the coordinates to integers
+        ROI = np.round(ROI).astype(np.int32)
+
+        # Calculate the translation values to revert the translation later
+        translate_x = int(min_x)
+        translate_y = int(min_y)
+
+        # Translate the ROI back to the original position
+        ROI[:, 0] += translate_x
+        ROI[:, 1] += translate_y
+
+        # Append the first point to close the rectangle
+        ROI = np.vstack([ROI, ROI[0]])
+
+        # Draw the rectangle on the axes
+        rect = patches.Polygon(ROI, linewidth=1, edgecolor='r', facecolor='none')
+        ax.add_patch(rect)
+
+        # Scatter plot the marker points
+        ax.scatter(ROI[:-1, 0], ROI[:-1, 1], c='r', s=10)
 
         plt.show()
     else:
         print("No valid points were selected.")
         ROI = None
+
     return ROI
 
+
 print("Waiting for camera...")
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
 print("Camera is on!")
 
 
 hsv_ranges = {}
-colors = ["green", "red", "yellow", "white", "orange"]
+colors = ["FRONTSIDE_ROBOT_CONTOURS", "RED_CROSS", "BACKSIDE_ROBOT", "WHITE_BALL_1","WHITE_BALL_2","WHITE_BALL_3","WHITE_BALL_4", "ORANGE_BALL5"]
 balls_position = []
 orange_balls_position = []
 robot_position = None
@@ -125,6 +184,25 @@ def calculate_orientation(vector):
     return deg
 
 
+# threshold for verifying a ball
+threshold_verify = 1
+
+# a dictionary for counting the occurrence of each ball
+balls_counter = {}
+balls_absence_counter = {}
+balls_presence_history = deque(maxlen=1500)
+       
+
+# the list for verified balls
+balls_position_verified = {}
+balls_position_send = {}
+
+def is_close_or_duplicate(point, points, threshold):
+    for p in points:
+        if point == p or (abs(point[0] - p[0]) <= threshold and abs(point[1] - p[1]) <= threshold):
+            return p
+    return None
+
 ball_ids = {}  # A dict to store the IDs of the balls
 next_ball_id = 1  # The ID that will be assigned to the next new ball
 ball_threshold = 20  # If a ball moves more than this many pixels between frames, it is considered a new ball
@@ -146,14 +224,16 @@ try:
 
 
         frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
-        new_width = frame_width // 2
-        new_height = frame_height // 2
+        new_width = frame_width #// 2
+        new_height = frame_height # // 2
         frame = cv2.resize(frame, (new_width, new_height))
 
-
+        #grid_size = (new_width, new_height) 
+        #print(f"grid size: {grid_size}")
         
         if frame_corners is None:
             frame_corners = draw_ROI(frame)
+            #frame_corners = [quantize_coordinates(point, 10) for point in frame_corners]
             if frame_corners is not None:  # Check if draw_ROI returned valid points
                 frame_corners = [(int(p[0]), int(p[1])) for p in frame_corners]
                 # Calculate grid size
@@ -166,8 +246,8 @@ try:
                 hsv_values = get_hsv_values(frame)
 
                 # get the min and max HSV values based on the selected HSV values
-                lower = [max(0, x - 10) for x in hsv_values]
-                upper = [min(255, x + 10) for x in hsv_values]
+                lower = [max(0, x - 13) for x in hsv_values]
+                upper = [min(255, x + 13) for x in hsv_values]
 
                 print(lower)
                 print(upper)
@@ -184,61 +264,58 @@ try:
 
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-            green_mask = cv2.inRange(hsv, hsv_ranges['green']['lower'], hsv_ranges['green']['upper'])
-            green_contours, _ = cv2.findContours(green_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            # print(hsv_ranges['green']['lower'])
-            # print(hsv_ranges['green']['upper'])
-            
-
-            # Get a binary image isolating the white pixels (light)
-            #white_mask_light = cv2.inRange(hsv, hsv_ranges['white_shadow']['lower'], hsv_ranges['white_shadow']['upper'])
-        
-            # Get a binary image isolating the white pixels (shadow)
-            #white_mask_shadow = cv2.inRange(hsv, hsv_ranges['white_light']['lower'], hsv_ranges['white_light']['upper'])
-
-            # Combine the white masks (light and shadow)
-            #white_mask = cv2.bitwise_or(white_mask_light, white_mask_shadow)
-            white_mask = cv2.inRange(hsv, hsv_ranges['white']['lower'], hsv_ranges['white']['upper'])
-        
-            white_contours, _ = cv2.findContours(white_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            FRONTSIDE_ROBOT_MASK = cv2.inRange(hsv, hsv_ranges['FRONTSIDE_ROBOT_CONTOURS']['lower'], hsv_ranges['FRONTSIDE_ROBOT_CONTOURS']['upper'])
+            FRONTSIDE_ROBOT_CONTOURS, _ = cv2.findContours(FRONTSIDE_ROBOT_MASK, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+         
+            white_mask1 = cv2.inRange(hsv, hsv_ranges['WHITE_BALL_1']['lower'], hsv_ranges['WHITE_BALL_1']['upper'])
+            white_mask2 = cv2.inRange(hsv, hsv_ranges['WHITE_BALL_2']['lower'], hsv_ranges['WHITE_BALL_1']['upper'])
+            white_mask3 = cv2.inRange(hsv, hsv_ranges['WHITE_BALL_3']['lower'], hsv_ranges['WHITE_BALL_1']['upper'])
+            white_mask4 = cv2.inRange(hsv, hsv_ranges['WHITE_BALL_4']['lower'], hsv_ranges['WHITE_BALL_1']['upper'])
+            white_contours1, _ = cv2.findContours(white_mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            white_contours2, _ = cv2.findContours(white_mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            white_contours3, _ = cv2.findContours(white_mask3, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            white_contours4, _ = cv2.findContours(white_mask4, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             # Get a binary image isolating the orange pixels
-            orange_mask = cv2.inRange(hsv, hsv_ranges['orange']['lower'], hsv_ranges['orange']['upper'])
+            orange_mask = cv2.inRange(hsv, hsv_ranges['ORANGE_BALL5']['lower'], hsv_ranges['ORANGE_BALL5']['upper'])
             orange_contours, _ = cv2.findContours(orange_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
             # Get a binary image isolating the yellow pixels
-            yellow_mask = cv2.inRange(hsv, hsv_ranges['yellow']['lower'], hsv_ranges['yellow']['upper'])
-            yellow_contours, _ = cv2.findContours(yellow_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            BACKSIDE_ROBOT_MASK = cv2.inRange(hsv, hsv_ranges['BACKSIDE_ROBOT']['lower'], hsv_ranges['BACKSIDE_ROBOT']['upper'])
+            BACKSIDE_ROBOT_CONTOURS, _ = cv2.findContours(BACKSIDE_ROBOT_MASK, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
             # Get a binary image isolating the red pixels
-            red_mask = cv2.inRange(hsv, hsv_ranges['red']['lower'], hsv_ranges['red']['upper'])
+            red_mask = cv2.inRange(hsv, hsv_ranges['RED_CROSS']['lower'], hsv_ranges['RED_CROSS']['upper'])
             red_contours, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            if green_contours:
-                robot_contour = max(green_contours, key=cv2.contourArea)
+            if FRONTSIDE_ROBOT_CONTOURS:
+                robot_contour = max(FRONTSIDE_ROBOT_CONTOURS, key=cv2.contourArea)
                 robot_front = get_center_of_contour(robot_contour)
 
                 if robot_front is not None and cv2.pointPolygonTest(polygon, robot_front, False) >= 0:
                     cv2.circle(frame, robot_front, 5, (255, 0, 0), -1)           
-                    robot_position = ((robot_front[0] - polygon[0][0]), (polygon[0][1] - robot_front[1]))
-                    if time.time() - last_robot_print_time >= 3:
-                    #  back_position = (robot_position[0] - robot_vector[0] / 2, robot_position[1] - robot_vector[1] / 2)
-                    #  front_position = (robot_position[0] + robot_vector[0] / 2, robot_position[1] + robot_vector[1] / 2)
-                        print(f"Robot front at: {robot_front}")
-                    #   print(f"Robot front at: {front_position}")
-                        if client_socket is not None:
-                            robot_position = tuple(int(x) for x in robot_position)  # Convert numpy ints to python ints
-                            try:
-                                client_socket.send((json.dumps({"robot": robot_position}) + '\n').encode())
-                            except Exception as e:
-                                print(f"Error sending robot position: {e}")
-                                break
-                        last_robot_print_time = time.time()
+                    #robot_position = (robot_front[0] - polygon[0][0]), (polygon[0][1] - robot_front[1])
+                    #robot_position = (robot_front[0] - polygon[0][0], robot_front[1] + polygon[0][1])
+                    robot_position= ((robot_front[0] - polygon[0][0]), (polygon[0][1] - robot_front[1]))
+                
+                    # if time.time() - last_robot_print_time >= 3:
+                    # #  back_position = (robot_position[0] - robot_vector[0] / 2, robot_position[1] - robot_vector[1] / 2)
+                    # #  front_position = (robot_position[0] + robot_vector[0] / 2, robot_position[1] + robot_vector[1] / 2)
+                    #     print(f"Robot front at: {robot_front}")
+                    # #   print(f"Robot front at: {front_position}")
+                    #     if client_socket is not None:
+                    #         robot_position = tuple(int(x) for x in robot_position)  # Convert numpy ints to python ints
+                    #         try:
+                    #             client_socket.send((json.dumps({"robot": robot_position}) + '\n').encode())
+                    #         except Exception as e:
+                    #             print(f"Error sending robot position: {e}")
+                    #             break
+                    #     last_robot_print_time = time.time()
 
-                        # After identifying the yellow part of the robot:
+                    #     # After identifying the yellow part of the robot:
 
-                if yellow_contours:  # Check for the yellow dot at the back of the robot
-                    tail_contour = max(yellow_contours, key=cv2.contourArea)
+                if BACKSIDE_ROBOT_CONTOURS:  # Check for the yellow dot at the back of the robot
+                    tail_contour = max(BACKSIDE_ROBOT_CONTOURS, key=cv2.contourArea)
                     tail_center = get_center_of_contour(tail_contour)
                     if tail_center is not None and cv2.pointPolygonTest(polygon, tail_center, False) >= 0:
                         cv2.circle(frame, tail_center, 5, (0, 255, 255), -1)  # Yellow circle
@@ -252,9 +329,7 @@ try:
 
                             #print(f"Robot orientation: {robot_orientation}")
 
-            balls_position = []  # Reset the white balls position at each frame             <-------------------------------------- TODO LOOK AT THIS
-            orange_balls_position = []  # Reset the orange balls position at each frame     <-------------------------------------- TODO LOOK AT THIS
-        
+            
             min_contour_area = 5  # adjust this value to suit your needs
 
             # red cross
@@ -275,21 +350,73 @@ try:
                             grid_point = (point[0] // cell_size, point[1] // cell_size)  # Convert from pixel coordinates to grid coordinates
                             red_cross_centers.append(point)
                             cv2.circle(frame, point, 5, (255, 192, 203), -1)  # Draw the center of the red cross in light blue
+                print(f"Red Cross at: {red_cross_centers}")
+                    
 
-                    print(f"Red Cross at: {red_cross_centers}")
+            balls_position = []  # Reset the white balls position at each frame             <-------------------------------------- TODO LOOK AT THIS
+            orange_balls_position = []  # Reset the orange balls position at each frame     <-------------------------------------- TODO LOOK AT THIS
+        
 
             # Find white balls
-            for contour in white_contours:
-                # Sort contours by area and keep only the largest 10
-                white_contours = sorted(white_contours, key=cv2.contourArea, reverse=True)[:10]
+            for white_contours in [white_contours1, white_contours2, white_contours3, white_contours4]:
+                for contour in white_contours:
+                    if cv2.contourArea(contour) < min_contour_area:
+                        continue
+                    ball_center = get_center_of_contour(contour)
+                    if ball_center is not None and cv2.pointPolygonTest(polygon, ball_center, False) >= 0:
+                        cv2.circle(frame, ball_center, 5, (0, 165, 255), -1)
+                        ball_position = ((ball_center[0] - polygon[0][0]), (polygon[0][1] - ball_center[1]))
 
-                if cv2.contourArea(contour) < min_contour_area:
-                    continue
-                ball_center = get_center_of_contour(contour)
-                if ball_center is not None and cv2.pointPolygonTest(polygon, ball_center, False) >= 0:
-                    cv2.circle(frame, ball_center, 5, (0, 165, 255), -1)
-                    balls_position.append(((ball_center[0] - polygon[0][0]), (polygon[0][1] - ball_center[1])))
-            
+                        if not is_close_or_duplicate(ball_position, balls_position, 5):
+                            balls_position.append(ball_position)
+                            close_or_duplicate = is_close_or_duplicate(ball_position, balls_position_verified.keys(), 3)
+                            if close_or_duplicate is not None:
+                                # reset the threshold for the existing ball
+                                balls_position_verified[close_or_duplicate] = 50
+                                # increment the counter for the existing ball
+                                balls_counter[close_or_duplicate] += 1
+                                # reset the absence counter for the ball
+                                balls_absence_counter[close_or_duplicate] = 0
+                                # if it meets the send threshold, add to balls_position_send
+                                if balls_counter[close_or_duplicate] >= 100 and close_or_duplicate not in balls_position_send:
+                                    balls_position_send[close_or_duplicate] = 10
+                            else:
+                                # add the new ball with initial threshold and counter
+                                balls_position_verified[ball_position] = 50
+                                balls_counter[ball_position] = 1
+                                balls_absence_counter[ball_position] = 0
+
+                # decrease the threshold for the balls not found in this iteration
+                for ball in list(balls_position_verified.keys()):  # copy the keys to a list to avoid runtime error
+                    if ball not in balls_position:
+                        balls_position_verified[ball] -= 1
+                        # increment the absence counter for the ball
+                        balls_absence_counter[ball] += 1
+                        # if it meets the removal threshold, remove from balls_position_send
+                        if balls_absence_counter[ball] >= 100 and ball in balls_position_send:
+                            del balls_position_send[ball]
+                    else:
+                        # do not decrease the counter for the ball if it's found
+                        balls_absence_counter[ball] = 0  # reset the absence counter if the ball is found
+
+                        # Add ball to presence history
+                        balls_presence_history.append(ball)
+
+                    # check if it reaches zero
+                    if balls_position_verified[ball] <= 0:
+                        del balls_position_verified[ball]
+                        del balls_counter[ball]
+                        del balls_absence_counter[ball]
+                for ball in list(balls_position_send.keys()):
+                    if ball not in balls_presence_history:
+                        del balls_position_send[ball]
+
+                #print(f"White balls at: {balls_position}")
+                #print(f"Verified white balls at: {balls_position_verified.keys()}")
+                if time.time() - last_send_time >= 1:
+                    print(f"Send white balls at: {balls_position_send.keys()}")
+                    print(f"robot poisiton - {robot_position}")
+    
             #assign_ids_to_balls(balls_position)  # NEW
 
             # Draw the number of balls on the frame
@@ -327,7 +454,7 @@ try:
             
                 # Create a dictionary to hold all the data
                 data = {
-                    "white_balls": [tuple(int(x) for x in pos) for pos in balls_position],
+                    "white_balls": [tuple(int(x) for x in pos) for pos in balls_position_send],
                     "orange_balls": [tuple(int(x) for x in pos) for pos in orange_balls_position],
                     "robot": None if robot_position is None else tuple(int(x) for x in robot_position),
                     "red_crosses": [tuple(int(x) for x in pos) for pos in red_cross_centers],
@@ -335,23 +462,38 @@ try:
                     "orientation": None if robot_degrees is None else float(robot_degrees)
                 }
 
+                # scale_factor = 10  # Adjust this value according to your needs
+
+                # scaled_data = {
+                #     "white_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["white_balls"]],
+                #     "orange_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["orange_balls"]],
+                #     "robot": None if data["robot"] is None else (int(data["robot"][0] / scale_factor), int(data["robot"][1] / scale_factor)),
+                #     "red_crosses": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["red_crosses"]],
+                #     "grid_size": None if data["grid_size"] is None else (int(data["grid_size"][0] / scale_factor), int(data["grid_size"][1] / scale_factor)),
+                #     "orientation": data["orientation"]
+                # }
+
                 # Remove any None values
                 data = {k: v for k, v in data.items() if v is not None}
 
                 if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
                     try:
                         client_socket.send((json.dumps(data) + '\n').encode())
-                    except Exception as e:  # If there's an error (like a disconnection), go back to trying to connect
+                    except Exception as e: 
                         print(f"Error sending data: {e}")
-                        connection_event.clear()  # Clear the event to signal that the client has disconnected
-                        connection_thread = threading.Thread(target=wait_for_connection)  # Start a new connection thread
+                        connection_event.clear()  
+                        if connection_thread.is_alive():  
+                            print("Waiting for connection thread to finish")
+                            connection_thread.join()  
+                        is_exiting = False  
+                        connection_thread = threading.Thread(target=wait_for_connection)  
                         connection_thread.start()
         
             cv2.polylines(frame, [polygon], True, (0,255,0), 2)
             cv2.imshow('Frame', frame)
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 finally:
     is_exiting = True
     if cap is not None:
@@ -361,6 +503,15 @@ finally:
         client_socket.close()
     if server_socket is not None:
         server_socket.close()
+
+# if is_exiting:
+#     if cap is not None:
+#         cap.release()
+#     cv2.destroyAllWindows()
+#     if client_socket is not None:
+#         client_socket.close()
+#     if server_socket is not None:
+#         server_socket.close()
 
 # def assign_ids_to_balls(balls_position):
 #     global next_ball_id, ball_ids
