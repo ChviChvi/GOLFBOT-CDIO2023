@@ -8,6 +8,7 @@ import time
 #from Robot_Movement2 import find_path
 from path import find_nearest_ball, reconstruct_path, astar
 from nosidesnomore import danger_zone, Moving_back, Turning
+from find_goal import rotate, release_balls
 
 
 key_state = {
@@ -81,16 +82,8 @@ def connect_to_robot():
 robot_connection_thread = threading.Thread(target=connect_to_robot)
 robot_connection_thread.start()
 
-
-
-
-
-
-
 def receive_tracking_data():
     
-    
-
     data = ""
 
     robot_turnto = None
@@ -153,152 +146,178 @@ def receive_tracking_data():
                         orientation = round(received_data["orientation"])
                         print(f"orientation is (90 is north): {orientation}")
                         print("-------------- CALCULATION FROM HERE ------------")
-                        try:
+
+                    grid = [[0 for _ in range(grid_size[0])] for _ in range(grid_size[1])]
+                    print(red_crosses)
+                    
+
+                    for cross in red_crosses:
+                        grid[(cross[0])][(cross[1])] = 1 
+
+                    '''        
+                    for i in range(2):
+                       for j in range(grid_size[0]):
+                            grid[j][i]=1
+
+                    for i in range(2):
+                        for j in range(grid_size[1]):
+                            grid[i][j]=1
                             
-                            
-                            #path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
-                            #move_robot(path, orientation)
-                            grid = [[0 for _ in range(grid_size[1])] for _ in range(grid_size[0])]
-                            print(red_crosses)
+                    for i in range(2):
+                        for j in range(grid_size[1]):
+                            grid[grid_size[1]-i][j]=1
 
-                            # Mark red crosses on the grid
-                            
-                            for cross in red_crosses:
-                                grid[(cross[0])][(cross[1])] = 1 
-                            
-                            print
-                            if Balls_container == 2:
-                                goal = (grid_size[0]-20,grid_size[1]/2)
-                                print("TO THE GOAL")
-                                came_from, cost_so_far, goal_reached = astar(grid, robot_position, goal)
-                                path_to_goal = reconstruct_path(came_from, tuple(robot_position), goal)
-                                move_robot(goalpath, orientation)
+                    for i in range(2):
+                        for j in range(grid_size[0]):
+                            grid[j][(grid_size[1])-i-1]=1
+                    '''
+                    try:
+                    
+                        #path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
+                        #move_robot(path, orientation)
+                        in_danger, white_balls, zone = danger_zone(grid_size, robot_position, white_balls)
+                        print(f"Received white balls positions: {white_balls}")
 
-                            
+                        if in_danger:
 
-                            in_danger, white_balls, zone = danger_zone(grid_size, robot_position, white_balls)
-                            print(f"Received white balls positions: {white_balls}")
+                            if zone != "Safe":
+                                key_state = Turning()
+                            elif zone == "Safe":
+                                key_state = Moving_back()
 
-                            if in_danger:
+                            client_socket.send((json.dumps(key_state) + '\n').encode())
 
-                                if zone is not "Safe":
-                                    key_state = Turning()
-                                elif zone is "Safe":
-                                    key_state = Moving_back()
+                        while Balls_container == 2:
+                            goal = (grid_size[0]-20,grid_size[1]/2)
+                            print("TO THE GOAL")
+                            came_from, cost_so_far, goal_reached = astar(grid, robot_position, goal)
+                            path_to_goal = reconstruct_path(came_from, tuple(robot_position), goal)
+                            move_robot(path_to_goal, orientation)
 
+                            if goal[0] -5 < robot_position[0] < goal[0]+5 and goal[1] -5 < robot_position[1] < goal[1]+5:
+                                key_state=rotate()
                                 client_socket.send((json.dumps(key_state) + '\n').encode())
-                            else:
-                                nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
-                                came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
-                                print("nearest ball: ", nearest_ball)
-                                
-                                # TODO error here
-                                path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
-                                print(path_to_nearest_ball)
-                                print("path to nearest ball: ", path_to_nearest_ball)
-                                print("nearest ball: ", nearest_ball)
-                                print("robot position:", robot_position)
-                                print("orientation:", orientation)
-                                move_robot(path_to_nearest_ball, orientation)
+                                if 0 <= orientation <= 5 or 345 <= orientation <= 360:
+                                    key_state = release_balls()
+                                    client_socket.send((json.dumps(key_state) + '\n').encode())
+
+
+
+
+
+                        else:
+                            nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
+                            came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
+                            print("nearest ball: ", nearest_ball)
                             
+                            # TODO error here
+                            print(ca)
+                            path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
+                            print("1 step", path_to_nearest_ball[0])
+                            print("2 step: ", path_to_nearest_ball[1])
+                            print("goal: ", path_to_nearest_ball[len(path_to_nearest_ball)-1])                               
+                            print("robot position:", robot_position)
+                            print("orientation:", orientation)
+                            move_robot(path_to_nearest_ball, orientation)
                         
+                    
 
-                            
-                            # Here we find which way the robot has to turn, and to which coordinate that is
-                            #elif not calculation:#robot_turnto is None and ball_target is None:
-                                #print("-------------- IF ORIENTATION ------------")
-                                #path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
-                                
-                                #print(f"path to nearest ball!!!!! ------------ {path}")
-                                #if path is not None:
-                                   # calculation = True
-                                # if not calculation:
-                                #     print("-------------- IF ORIENTATION ------------")
-                                #     robot_turnto, ball_target = get_orientation_and_target(robot_position, orientation, grid_size, white_balls, orange_balls, red_crosses)
-                                #     print(f"the robot has to turn to: {robot_turnto}")
-                                #     print(f"the ball he is going to: {ball_target}")
-                                #     #robot_turnto = robot_turnto + 180 %360
-                                #     calculation = True
-                                #     facing_ball = False
-                            # here we check if the robot has reached
-
-                            #elif calculation:
-                                #if robot_position == path[1]:
-                                #    path.pop
-                                #move_robot(path, orientation)
                         
-                            # elif not facing_ball:
-                            #     if orientation is not None and robot_turnto is not None:
-                            #         print("-------------- IF TURNING ------------")
-                                   
-                            #         key_state, facing_ball = align_orientation(orientation, robot_turnto, facing_ball)
-                                
-                            #         client_socket.send((json.dumps(key_state) + '\n').encode())
-                            # # handling the robot moving forward.
-                            # elif facing_ball:
-                            #     #check if robot front is still sending front TODO
-                            #     if robot_position is not None and ball_target is not None:
-                            #         key_state, reached_ball = move_to_target(robot_position, ball_target, reached_ball)
-                            #         print("MOVING")
-                            #         facing_ball = False
-                            #         client_socket.send((json.dumps(key_state) + '\n').encode())
-                            #         if reached_ball:
-                            #             robot_turnto = None
-                            #             ball_target = None
-                            #             reached_ball = False
-                            #             calculation = False
-
-                            # # Initialize grid
-                            # grid = [[0 for _ in range(grid_size[1])] for _ in range(grid_size[0])]
-
-                            # # Mark red crosses on the grid
+                        # Here we find which way the robot has to turn, and to which coordinate that is
+                        #elif not calculation:#robot_turnto is None and ball_target is None:
+                            #print("-------------- IF ORIENTATION ------------")
+                            #path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
                             
-                            # for cross in red_crosses:
-                            #     grid[(cross[0])][(cross[1])] = 1  # 1 represents red cross
+                            #print(f"path to nearest ball!!!!! ------------ {path}")
+                            #if path is not None:
+                                # calculation = True
+                            # if not calculation:
+                            #     print("-------------- IF ORIENTATION ------------")
+                            #     robot_turnto, ball_target = get_orientation_and_target(robot_position, orientation, grid_size, white_balls, orange_balls, red_crosses)
+                            #     print(f"the robot has to turn to: {robot_turnto}")
+                            #     print(f"the ball he is going to: {ball_target}")
+                            #     #robot_turnto = robot_turnto + 180 %360
+                            #     calculation = True
+                            #     facing_ball = False
+                        # here we check if the robot has reached
 
-                            # # Find nearest ball
+                        #elif calculation:
+                            #if robot_position == path[1]:
+                            #    path.pop
+                            #move_robot(path, orientation)
+                    
+                        # elif not facing_ball:
+                        #     if orientation is not None and robot_turnto is not None:
+                        #         print("-------------- IF TURNING ------------")
+                                
+                        #         key_state, facing_ball = align_orientation(orientation, robot_turnto, facing_ball)
                             
-                            # nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
-                            # #balls = white_balls and orange_balls  # if you also consider orange balls
+                        #         client_socket.send((json.dumps(key_state) + '\n').encode())
+                        # # handling the robot moving forward.
+                        # elif facing_ball:
+                        #     #check if robot front is still sending front TODO
+                        #     if robot_position is not None and ball_target is not None:
+                        #         key_state, reached_ball = move_to_target(robot_position, ball_target, reached_ball)
+                        #         print("MOVING")
+                        #         facing_ball = False
+                        #         client_socket.send((json.dumps(key_state) + '\n').encode())
+                        #         if reached_ball:
+                        #             robot_turnto = None
+                        #             ball_target = None
+                        #             reached_ball = False
+                        #             calculation = False
 
-                            # #print("astar")
-                            # #print(robot_position)
-                            # #print(nearest_ball)
-                            # came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
-                            # #print("hej")
+                        # # Initialize grid
+                        # grid = [[0 for _ in range(grid_size[1])] for _ in range(grid_size[0])]
 
-                            # #print(f'came_from: {came_from}')
-                            # #print("error is in position")
-                            # #print(f'current node: {tuple(robot_position)}')
-                            # #print("error is in nearest ball")
-                            # #print(f'target node: {nearest_ball}')
-                            # print(f"the goal: {goal_reached}")
-                            # if goal_reached:
-                                
-                            #     path_to_nearest_ball = reconstruct_path(came_from, robot_position, nearest_ball)
-                                
-                            # else:
-                            #     print("No valid path to the goal")
-                            #     continue
-                            # print(20)
-                            # #print(came_from)
-                            # print("ROBOT POSITION")
-                            # print(robot_position)
-                            # #print(nearest_ball)
-                            # #path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
-                            # #print(path_to_nearest_ball)
+                        # # Mark red crosses on the grid
+                        
+                        # for cross in red_crosses:
+                        #     grid[(cross[0])][(cross[1])] = 1  # 1 represents red cross
 
-                            # print("ARE WE MOVING THE ROBOT??")
-                            # print("ARE WE MOVING THE ROBOT??")
-                            # print("ARE WE MOVING THE ROBOT??")
-                            # move_robot(path_to_nearest_ball, orientation)
-                            # print(22)
-                            # # Find nearest ball again after moving the robot
-                            # nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
-                            # print(23)
-                        except OSError:
-                            print("WARNING: robot algorithm didnt work, so no movement.")
-                            continue
+                        # # Find nearest ball
+                        
+                        # nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
+                        # #balls = white_balls and orange_balls  # if you also consider orange balls
+
+                        # #print("astar")
+                        # #print(robot_position)
+                        # #print(nearest_ball)
+                        # came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
+                        # #print("hej")
+
+                        # #print(f'came_from: {came_from}')
+                        # #print("error is in position")
+                        # #print(f'current node: {tuple(robot_position)}')
+                        # #print("error is in nearest ball")
+                        # #print(f'target node: {nearest_ball}')
+                        # print(f"the goal: {goal_reached}")
+                        # if goal_reached:
+                            
+                        #     path_to_nearest_ball = reconstruct_path(came_from, robot_position, nearest_ball)
+                            
+                        # else:
+                        #     print("No valid path to the goal")
+                        #     continue
+                        # print(20)
+                        # #print(came_from)
+                        # print("ROBOT POSITION")
+                        # print(robot_position)
+                        # #print(nearest_ball)
+                        # #path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
+                        # #print(path_to_nearest_ball)
+
+                        # print("ARE WE MOVING THE ROBOT??")
+                        # print("ARE WE MOVING THE ROBOT??")
+                        # print("ARE WE MOVING THE ROBOT??")
+                        # move_robot(path_to_nearest_ball, orientation)
+                        # print(22)
+                        # # Find nearest ball again after moving the robot
+                        # nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
+                        # print(23)
+                    except OSError:
+                        print("WARNING: robot algorithm didnt work, so no movement.")
+                        continue
 
                 # Clean data for next reading
                 data = ""

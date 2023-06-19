@@ -55,13 +55,13 @@ try:
                         right_motor_speed -= 3
                         claw_speed = 0
                     if 'turn_left' in command and command['turn_left']:
-                        left_motor_speed += 6
-                        right_motor_speed -= 6
+                        left_motor_speed += 2
+                        right_motor_speed -= 2
                         claw_speed = 0
                         #tank.on_for_degrees(-25, 25, 25)
                     if 'turn_right' in command and command['turn_right']:
-                        left_motor_speed -= 6
-                        right_motor_speed += 6
+                        left_motor_speed -= 2
+                        right_motor_speed += 2
                         claw_speed = 0
                         #tank.on_for_degrees(25, -25, 25)
                     if 'o' in command and command['o']:

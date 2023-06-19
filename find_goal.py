@@ -24,3 +24,31 @@ def find_goal(grid, robot_position, goal_position, red_crosses):
 
     return shortest_path
 
+def rotate():
+
+    key_state = {
+        "forward": False,
+        "turn_left": True,
+        "turn_right": False,
+        "backward": False,
+        "slowmode": False,
+        "o": False,
+        "p": False,
+    }
+
+    return key_state
+
+def release_balls():
+
+    key_state = {
+        "forward": False,
+        "turn_left": False,
+        "turn_right": False,
+        "backward": False,
+        "slowmode": False,
+        "o": True,
+        "p": False,
+    }
+
+    return key_state
+

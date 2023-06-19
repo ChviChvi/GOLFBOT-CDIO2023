@@ -32,7 +32,6 @@ def find_nearest_ball(grid, robot_position, balls, red_crosses):
 def reconstruct_path(came_from, start, goal):
     current = tuple(goal)  # Convert goal to tuple
     path = []
-    print("reconstruct_path")
 
     print(f"error check current: {current}")
     print(current)
@@ -46,7 +45,6 @@ def reconstruct_path(came_from, start, goal):
     return path
 
 def astar(grid, start, goal):
-    print("Astar")
     open_set = []
     heapq.heappush(open_set, (0, start))  # Push start node with priority 0
     came_from = {}

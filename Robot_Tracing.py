@@ -158,7 +158,7 @@ robot_angle = None
 red_cross_centers = None
 frame_corners = None
 
-cell_size = 10
+cell_size = 1
 
 last_send_time = time.time()
 last_robot_print_time = time.time()
@@ -336,26 +336,27 @@ try:
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
             
-
+            
             # If the red cross centers have not been computed yet
             if red_cross_centers is None:
                 red_cross_centers = []
+                frame_height = frame.shape[0]
                 for contour in red_contours:
                     if cv2.contourArea(contour) < min_contour_area:
                         continue
-
+                
                     for point in contour:
                         point = tuple(point[0])  # convert from [[x y]] to (x, y)
                         if cv2.pointPolygonTest(polygon, (int(point[0]), int(point[1])), False) >= 0:
-                            grid_point = (point[0] // cell_size, point[1] // cell_size)  # Convert from pixel coordinates to grid coordinates
-                            red_cross_centers.append(point)
-                            cv2.circle(frame, point, 5, (255, 192, 203), -1)  # Draw the center of the red cross in light blue
+                            # Convert from pixel coordinates to grid coordinates, flipping the y axis
+                            cv2.circle(frame, point, 5, (255, 192, 203), -1)
+                            grid_point = ((point[0] - polygon[0][0]), (polygon[0][1] - point[1]))
+                            red_cross_centers.append(grid_point)
+                            #grid_point = (point[0] , (frame_height - point[1]) )
+                            #red_cross_centers.append(grid_point)
+                            #cv2.circle(frame, point, 5, (255, 192, 203), -1)  # Draw the center of the red cross in light blue
                 print(f"Red Cross at: {red_cross_centers}")
-                    
 
-            balls_position = []  # Reset the white balls position at each frame             <-------------------------------------- TODO LOOK AT THIS
-            orange_balls_position = []  # Reset the orange balls position at each frame     <-------------------------------------- TODO LOOK AT THIS
-        
 
             # Find white balls
             for white_contours in [white_contours1, white_contours2, white_contours3, white_contours4]:
@@ -378,7 +379,7 @@ try:
                                 # reset the absence counter for the ball
                                 balls_absence_counter[close_or_duplicate] = 0
                                 # if it meets the send threshold, add to balls_position_send
-                                if balls_counter[close_or_duplicate] >= 50 and close_or_duplicate not in balls_position_send:
+                                if balls_counter[close_or_duplicate] >= 20 and close_or_duplicate not in balls_position_send:
                                     balls_position_send[close_or_duplicate] = 10
                             else:
                                 # add the new ball with initial threshold and counter
@@ -393,7 +394,7 @@ try:
                         # increment the absence counter for the ball
                         balls_absence_counter[ball] += 1
                         # if it meets the removal threshold, remove from balls_position_send
-                        if balls_absence_counter[ball] >= 60 and ball in balls_position_send:
+                        if balls_absence_counter[ball] >= 30 and ball in balls_position_send:
                             del balls_position_send[ball]
                     else:
                         # do not decrease the counter for the ball if it's found
@@ -453,7 +454,9 @@ try:
                 print(f"Robot Degrees: {robot_degrees}")
                 print(f"Send white balls at: {balls_position_send.keys()}")
                 print(f"Robot poisiton - {robot_position}")
+                print(f"grid_size - {grid_size}")
                 last_send_time = time.time()
+
             
                 # Create a dictionary to hold all the data
                 data = {
@@ -465,7 +468,7 @@ try:
                     "orientation": None if robot_degrees is None else float(robot_degrees)
                 }
 
-                scale_factor = 2.5  # Adjust this value according to your needs
+                scale_factor = 1  # Adjust this value according to your needs
 
                 scaled_data = {
                     "white_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["white_balls"]],
