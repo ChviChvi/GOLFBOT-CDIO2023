@@ -145,7 +145,7 @@ def draw_ROI(frame):
 
 
 print("Waiting for camera...")
-cap = cv2.VideoCapture(1, cv2.CAP_DSHOW )
+cap = cv2.VideoCapture(0)
 print("Camera is on!")
 
 
@@ -224,8 +224,8 @@ try:
 
         
         frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
-        new_width = int(frame_width )
-        new_height = int(frame_height )
+        new_width = int(frame_width/2 )
+        new_height = int(frame_height/2 )
         frame = cv2.resize(frame, (new_width, new_height))
         
         #grid_size = (new_width, new_height) 
@@ -393,7 +393,7 @@ try:
                         # increment the absence counter for the ball
                         balls_absence_counter[ball] += 1
                         # if it meets the removal threshold, remove from balls_position_send
-                        if balls_absence_counter[ball] >= 33 and ball in balls_position_send:
+                        if balls_absence_counter[ball] >= 60 and ball in balls_position_send:
                             del balls_position_send[ball]
                     else:
                         # do not decrease the counter for the ball if it's found

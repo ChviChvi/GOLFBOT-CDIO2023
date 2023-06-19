@@ -9,27 +9,22 @@ def calculate_distance(position1, position2):
     x1, y1 = position1
     x2, y2 = position2
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-    x2, y2 = position2  
-    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+
+
 
 def find_nearest_ball(grid, robot_position, balls, red_crosses):
-    print("using second method")
     print("finding nearest ball")
     # Find the nearest ball to the robot's position
     min_distance = float('inf')
     nearest_ball = None
 
     for ball in balls:
-        
         if ball not in red_crosses:  # Exclude red crosses
             distance = calculate_distance(robot_position, ball)
-            
             if distance < min_distance:
                 min_distance = distance
                 nearest_ball = ball
-                
-    print("printing nearest ball")
-    print(nearest_ball)
     print("nearest ball: ",nearest_ball )
 
     return nearest_ball
@@ -51,7 +46,7 @@ def reconstruct_path(came_from, start, goal):
     return path
 
 def astar(grid, start, goal):
-    print("astar")
+    print("Astar")
     open_set = []
     heapq.heappush(open_set, (0, start))  # Push start node with priority 0
     came_from = {}
