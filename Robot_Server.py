@@ -51,9 +51,9 @@ try:
                         right_motor_speed += 20
                         claw_speed = 20
                     if 'backward' in command and command['backward']:
-                        left_motor_speed -= 3
-                        right_motor_speed -= 3
-                        claw_speed = 0
+                        left_motor_speed -= 20
+                        right_motor_speed -= 20
+                        claw_speed = -10
                     if 'turn_left' in command and command['turn_left']:
                         left_motor_speed += 2
                         right_motor_speed -= 2

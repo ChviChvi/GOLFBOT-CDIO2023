@@ -14,7 +14,7 @@ def calculate_distance(position1, position2):
 
 
 def find_nearest_ball(grid, robot_position, balls, red_crosses):
-    print("finding nearest ball")
+    #print("finding nearest ball")
     # Find the nearest ball to the robot's position
     min_distance = float('inf')
     nearest_ball = None
@@ -32,8 +32,9 @@ def find_nearest_ball(grid, robot_position, balls, red_crosses):
 def reconstruct_path(came_from, start, goal):
     current = tuple(goal)  # Convert goal to tuple
     path = []
+    #print("reconstruct_path")
 
-    print(f"error check current: {current}")
+    #print(f"error check current: {current}")
     print(current)
     while current != tuple(start):  # Convert start to tuple
         path.append(list(current))  # Convert current back to list for appending to path
@@ -45,6 +46,7 @@ def reconstruct_path(came_from, start, goal):
     return path
 
 def astar(grid, start, goal):
+    #print("Astar")
     open_set = []
     heapq.heappush(open_set, (0, start))  # Push start node with priority 0
     came_from = {}

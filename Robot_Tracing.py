@@ -145,7 +145,7 @@ def draw_ROI(frame):
 
 
 print("Waiting for camera...")
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1,cv2.CAP_DSHOW)
 print("Camera is on!")
 
 
@@ -224,8 +224,8 @@ try:
 
         
         frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
-        new_width = int(frame_width/2 )
-        new_height = int(frame_height/2 )
+        new_width = int(frame_width )
+        new_height = int(frame_height )
         frame = cv2.resize(frame, (new_width, new_height))
         
         #grid_size = (new_width, new_height) 
@@ -449,7 +449,7 @@ try:
                     cv2.circle(frame, ball_center, 5, (0, 255, 0), -1)
                     orange_balls_position.append(((ball_center[0] - polygon[0][0]), (polygon[0][1] - ball_center[1])))
 
-            if time.time() - last_send_time >= 1:  # Send the data every second
+            if time.time() - last_send_time >= 0.1:  # Send the data every second
                 print("- - - - - -NEW SEND!- - - - - -")
                 print(f"Robot Degrees: {robot_degrees}")
                 print(f"Send white balls at: {balls_position_send.keys()}")
