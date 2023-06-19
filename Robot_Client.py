@@ -175,16 +175,16 @@ def receive_tracking_data():
                             if in_danger:
                                 Moving_Back()
                             else:
-                            nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
-                            came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
-                            print("nearest ball: ", nearest_ball)
-                            path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
-                            print(path_to_nearest_ball)
-                            print("path to nearest ball: ", path_to_nearest_ball)
-                            print("nearest ball: ", nearest_ball)
-                            print("robot position:", robot_position)
-                            print("orientation:", orientation)
-                            move_robot(path_to_nearest_ball, orientation)
+                                nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
+                                came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
+                                print("nearest ball: ", nearest_ball)
+                                path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
+                                print(path_to_nearest_ball)
+                                print("path to nearest ball: ", path_to_nearest_ball)
+                                print("nearest ball: ", nearest_ball)
+                                print("robot position:", robot_position)
+                                print("orientation:", orientation)
+                                move_robot(path_to_nearest_ball, orientation)
                             
                         
 
