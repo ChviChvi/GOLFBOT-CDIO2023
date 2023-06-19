@@ -1,6 +1,6 @@
 
 
-def danger_zone(grid, robot_position, ball_list, danger_distance=10):
+def danger_zone(grid, robot_position, ball_list, danger_distance=25):
     # Grid dimensions
     X, Y = grid
 
@@ -35,4 +35,4 @@ def Moving_back():
 
     key_state["backward"] = True
 
-    client_socket.send((json.dumps(key_state) + '\n').encode())
+    return key_state

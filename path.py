@@ -20,14 +20,14 @@ def find_nearest_ball(grid, robot_position, balls, red_crosses):
     nearest_ball = None
 
     for ball in balls:
-        print("1")
+        
         if ball not in red_crosses:  # Exclude red crosses
             distance = calculate_distance(robot_position, ball)
-            print("2")
+            
             if distance < min_distance:
                 min_distance = distance
                 nearest_ball = ball
-                print("3")
+                
     print("printing nearest ball")
     print(nearest_ball)
     print("nearest ball: ",nearest_ball )
@@ -41,10 +41,17 @@ def reconstruct_path(came_from, start, goal):
 
     print(f"error check current: {current}")
     print(current)
+    while current != tuple(start):  # Convert start to tuple
+        path.append(list(current))  # Convert current back to list for appending to path
+
+        current = came_from[tuple(current)]  # Convert current to tuple for dictionary lookup
+
+    path.append(list(start))  # Convert start back to list for appending to path
+    path.reverse()
     return path
 
 def astar(grid, start, goal):
-    parint("astar")
+    print("astar")
     open_set = []
     heapq.heappush(open_set, (0, start))  # Push start node with priority 0
     came_from = {}
