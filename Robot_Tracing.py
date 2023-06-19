@@ -357,6 +357,8 @@ try:
                             #cv2.circle(frame, point, 5, (255, 192, 203), -1)  # Draw the center of the red cross in light blue
                 print(f"Red Cross at: {red_cross_centers}")
 
+            balls_position = []  # Reset the white balls position at each frame             <-------------------------------------- TODO LOOK AT THIS
+            orange_balls_position = []  # Reset the orange balls position at each frame     <-------------------------------------- TODO LOOK AT THIS
 
             # Find white balls
             for white_contours in [white_contours1, white_contours2, white_contours3, white_contours4]:
@@ -367,7 +369,6 @@ try:
                     if ball_center is not None and cv2.pointPolygonTest(polygon, ball_center, False) >= 0:
                         cv2.circle(frame, ball_center, 5, (0, 165, 255), -1)
                         ball_position = ((ball_center[0] - polygon[0][0]), (polygon[0][1] - ball_center[1]))
-
                         if not is_close_or_duplicate(ball_position, balls_position, 5):
                             balls_position.append(ball_position)
                             close_or_duplicate = is_close_or_duplicate(ball_position, balls_position_verified.keys(), 3)
@@ -379,14 +380,14 @@ try:
                                 # reset the absence counter for the ball
                                 balls_absence_counter[close_or_duplicate] = 0
                                 # if it meets the send threshold, add to balls_position_send
-                                if balls_counter[close_or_duplicate] >= 20 and close_or_duplicate not in balls_position_send:
+                                #if balls_counter[close_or_duplicate] >= 100 and close_or_duplicate not in balls_position_send:
+                                if balls_counter[close_or_duplicate] >= 50 and close_or_duplicate not in balls_position_send:
                                     balls_position_send[close_or_duplicate] = 10
                             else:
                                 # add the new ball with initial threshold and counter
                                 balls_position_verified[ball_position] = 50
                                 balls_counter[ball_position] = 1
                                 balls_absence_counter[ball_position] = 0
-
                 # decrease the threshold for the balls not found in this iteration
                 for ball in list(balls_position_verified.keys()):  # copy the keys to a list to avoid runtime error
                     if ball not in balls_position:
@@ -394,15 +395,14 @@ try:
                         # increment the absence counter for the ball
                         balls_absence_counter[ball] += 1
                         # if it meets the removal threshold, remove from balls_position_send
-                        if balls_absence_counter[ball] >= 30 and ball in balls_position_send:
+                        #if balls_absence_counter[ball] >= 100 and ball in balls_position_send:
+                        if balls_absence_counter[ball] >= 33 and ball in balls_position_send:
                             del balls_position_send[ball]
                     else:
                         # do not decrease the counter for the ball if it's found
                         balls_absence_counter[ball] = 0  # reset the absence counter if the ball is found
-
                         # Add ball to presence history
                         balls_presence_history.append(ball)
-
                     # check if it reaches zero
                     if balls_position_verified[ball] <= 0:
                         del balls_position_verified[ball]
@@ -411,7 +411,6 @@ try:
                 for ball in list(balls_position_send.keys()):
                     if ball not in balls_presence_history:
                         del balls_position_send[ball]
-
                 #print(f"White balls at: {balls_position}")
                 #print(f"Verified white balls at: {balls_position_verified.keys()}")
                 if time.time() - last_send_time >= 1:
@@ -480,11 +479,11 @@ try:
                 }
 
                 # Remove any None values
-                scaled_data = {k: v for k, v in scaled_data.items() if v is not None}
+                data = {k: v for k, v in data.items() if v is not None}
 
                 if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
                     try:
-                        client_socket.send((json.dumps(scaled_data) + '\n').encode())
+                        client_socket.send((json.dumps(data) + '\n').encode())
                     except Exception as e: 
                         print(f"Error sending data: {e}")
                         connection_event.clear()  

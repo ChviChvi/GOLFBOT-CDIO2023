@@ -179,30 +179,30 @@ def receive_tracking_data():
                         in_danger, white_balls, zone = danger_zone(grid_size, robot_position, white_balls)
                         print(f"Received white balls positions: {white_balls}")
 
-                            if in_danger:
-                                print("IM IN DANGER ZONE")    
-                                if zone is not "Safe":
-                                    print("IM IN DANGER ZONE - TURNING")
-                                    key_state = Turning(zone, orientation)
-                                elif zone is "Safe":
-                                    print("IM IN DANGER ZONE - BACKING")
-                                    key_state = Moving_back()
+                        if in_danger:
+                            print("IM IN DANGER ZONE")    
+                            if zone is not "Safe":
+                                print("IM IN DANGER ZONE - TURNING")
+                                key_state = Turning(zone, orientation)
+                            elif zone is "Safe":
+                                print("IM IN DANGER ZONE - BACKING")
+                                key_state = Moving_back()
 
                             client_socket.send((json.dumps(key_state) + '\n').encode())
 
-                        while Balls_container == 2:
-                            goal = (grid_size[0]-20,grid_size[1]/2)
-                            print("TO THE GOAL")
-                            came_from, cost_so_far, goal_reached = astar(grid, robot_position, goal)
-                            path_to_goal = reconstruct_path(came_from, tuple(robot_position), goal)
-                            move_robot(path_to_goal, orientation)
+                        # while Balls_container == 2:
+                        #     goal = (grid_size[0]-20,grid_size[1]/2)
+                        #     print("TO THE GOAL")
+                        #     came_from, cost_so_far, goal_reached = astar(grid, robot_position, goal)
+                        #     path_to_goal = reconstruct_path(came_from, tuple(robot_position), goal)
+                        #     move_robot(path_to_goal, orientation)
 
-                            if goal[0] -5 < robot_position[0] < goal[0]+5 and goal[1] -5 < robot_position[1] < goal[1]+5:
-                                key_state=rotate()
-                                client_socket.send((json.dumps(key_state) + '\n').encode())
-                                if 0 <= orientation <= 5 or 345 <= orientation <= 360:
-                                    key_state = release_balls()
-                                    client_socket.send((json.dumps(key_state) + '\n').encode())
+                        #     if goal[0] -5 < robot_position[0] < goal[0]+5 and goal[1] -5 < robot_position[1] < goal[1]+5:
+                        #         key_state=rotate()
+                        #         client_socket.send((json.dumps(key_state) + '\n').encode())
+                        #         if 0 <= orientation <= 5 or 345 <= orientation <= 360:
+                        #             key_state = release_balls()
+                        #             client_socket.send((json.dumps(key_state) + '\n').encode())
 
 
 
@@ -214,7 +214,7 @@ def receive_tracking_data():
                             print("nearest ball: ", nearest_ball)
                             
                             # TODO error here
-                            print(ca)
+                            
                             path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
                             print("1 step", path_to_nearest_ball[0])
                             print("2 step: ", path_to_nearest_ball[1])
