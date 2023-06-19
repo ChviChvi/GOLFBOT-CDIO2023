@@ -7,7 +7,7 @@ import time
 #from Robot_Movement import get_orientation_and_target, calculate_distance
 #from Robot_Movement2 import find_path
 from path import find_nearest_ball, reconstruct_path, astar
-from nosidesnomore import danger_zone, Moving_back
+from nosidesnomore import danger_zone, Moving_back, Turning
 
 
 key_state = {
@@ -170,11 +170,15 @@ def receive_tracking_data():
                             for cross in red_crosses:
                                 grid[(cross[0])][(cross[1])] = 1 
 
-                            in_danger, white_balls = danger_zone(grid_size, robot_position, white_balls)
+                            in_danger, white_balls, zone = danger_zone(grid_size, robot_position, white_balls)
                             print(f"Received white balls positions: {white_balls}")
 
                             if in_danger:
-                                key_state = Moving_back()
+
+                                if zone is not "Safe":
+                                    key_state = Turning()
+                                elif zone is "Safe":
+                                    key_state = Moving_back()
 
                                 client_socket.send((json.dumps(key_state) + '\n').encode())
                             else:
