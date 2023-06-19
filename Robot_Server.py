@@ -42,24 +42,27 @@ try:
                     left_motor_speed = 0
                     right_motor_speed = 0
                     motor_speed = 0
-                    claw_speed = 20
+                    claw_speed = 0
 
 
                     # check if key exists in command before trying to access it
                     if 'forward' in command and command['forward']:
                         left_motor_speed += 20
                         right_motor_speed += 20
-                        claw_speed = 15
+                        claw_speed = 20
                     if 'backward' in command and command['backward']:
                         left_motor_speed -= 3
                         right_motor_speed -= 3
+                        claw_speed = 0
                     if 'turn_left' in command and command['turn_left']:
                         left_motor_speed += 6
                         right_motor_speed -= 6
+                        claw_speed = 0
                         #tank.on_for_degrees(-25, 25, 25)
                     if 'turn_right' in command and command['turn_right']:
                         left_motor_speed -= 6
                         right_motor_speed += 6
+                        claw_speed = 0
                         #tank.on_for_degrees(25, -25, 25)
                     if 'o' in command and command['o']:
                         motor_speed = 20

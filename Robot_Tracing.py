@@ -145,7 +145,7 @@ def draw_ROI(frame):
 
 
 print("Waiting for camera...")
-cap = cv2.VideoCapture(0 , )
+cap = cv2.VideoCapture(1, cv2.CAP_DSHOW )
 print("Camera is on!")
 
 
@@ -378,7 +378,7 @@ try:
                                 # reset the absence counter for the ball
                                 balls_absence_counter[close_or_duplicate] = 0
                                 # if it meets the send threshold, add to balls_position_send
-                                if balls_counter[close_or_duplicate] >= 100 and close_or_duplicate not in balls_position_send:
+                                if balls_counter[close_or_duplicate] >= 50 and close_or_duplicate not in balls_position_send:
                                     balls_position_send[close_or_duplicate] = 10
                             else:
                                 # add the new ball with initial threshold and counter
@@ -393,7 +393,7 @@ try:
                         # increment the absence counter for the ball
                         balls_absence_counter[ball] += 1
                         # if it meets the removal threshold, remove from balls_position_send
-                        if balls_absence_counter[ball] >= 100 and ball in balls_position_send:
+                        if balls_absence_counter[ball] >= 33 and ball in balls_position_send:
                             del balls_position_send[ball]
                     else:
                         # do not decrease the counter for the ball if it's found
@@ -448,8 +448,11 @@ try:
                     cv2.circle(frame, ball_center, 5, (0, 255, 0), -1)
                     orange_balls_position.append(((ball_center[0] - polygon[0][0]), (polygon[0][1] - ball_center[1])))
 
-            if time.time() - last_send_time >= 1:  # Send the data every second
+            if time.time() - last_send_time >= 0.5:  # Send the data every second
+                print("- - - - - -NEW SEND!- - - - - -")
                 print(f"Robot Degrees: {robot_degrees}")
+                print(f"Send white balls at: {balls_position_send.keys()}")
+                print(f"Robot poisiton - {robot_position}")
                 last_send_time = time.time()
             
                 # Create a dictionary to hold all the data
@@ -462,7 +465,7 @@ try:
                     "orientation": None if robot_degrees is None else float(robot_degrees)
                 }
 
-                scale_factor = 10  # Adjust this value according to your needs
+                scale_factor = 2.5  # Adjust this value according to your needs
 
                 scaled_data = {
                     "white_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["white_balls"]],
