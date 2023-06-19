@@ -448,7 +448,7 @@ try:
                     cv2.circle(frame, ball_center, 5, (0, 255, 0), -1)
                     orange_balls_position.append(((ball_center[0] - polygon[0][0]), (polygon[0][1] - ball_center[1])))
 
-            if time.time() - last_send_time >= 0.1:  # Send the data every second
+            if time.time() - last_send_time >= 0.3:  # Send the data every second
                 print("- - - - - -NEW SEND!- - - - - -")
                 print(f"Robot Degrees: {robot_degrees}")
                 print(f"Send white balls at: {balls_position_send.keys()}")
