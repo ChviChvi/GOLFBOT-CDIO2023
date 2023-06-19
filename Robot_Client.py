@@ -154,21 +154,27 @@ def receive_tracking_data():
                         print(f"orientation is (90 is north): {orientation}")
                         print("-------------- CALCULATION FROM HERE ------------")
                         try:
-                            '''
-                            if Balls_container == 5:
-                                goal = (grid_size[0]-3,grid_size[1]/2)
-                                print("TO THE GOAL")
-                                goalpath = find_goal(grid_size, robot_position, red_crosses)
-                                move_robot(goalpath, orientation)
-                            '''
+                            
+                            
                             #path = find_path(grid_size, robot_position, white_balls, orange_balls,red_crosses)
                             #move_robot(path, orientation)
                             grid = [[0 for _ in range(grid_size[1])] for _ in range(grid_size[0])]
+                            print(red_crosses)
 
                             # Mark red crosses on the grid
                             
                             for cross in red_crosses:
                                 grid[(cross[0])][(cross[1])] = 1 
+                            
+                            print
+                            if Balls_container == 2:
+                                goal = (grid_size[0]-20,grid_size[1]/2)
+                                print("TO THE GOAL")
+                                came_from, cost_so_far, goal_reached = astar(grid, robot_position, goal)
+                                path_to_goal = reconstruct_path(came_from, tuple(robot_position), goal)
+                                move_robot(goalpath, orientation)
+
+                            
 
                             in_danger, white_balls = danger_zone(grid_size, robot_position, white_balls)
                             print(f"Received white balls positions: {white_balls}")

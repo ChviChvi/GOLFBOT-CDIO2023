@@ -1,8 +1,8 @@
-def find_goal(grid_size, robot_position, goal_position, red_crosses):
-    grid = create_grid(grid_size, red_crosses)
+def find_goal(grid, robot_position, goal_position, red_crosses):
     shortest_path = None
     goal= goal_position
     print("robot position: ", robot_position)
+    print("goal position: ", goal_position)
 
     def calculate_distance(pos1, pos2):
         (x1, y1) = pos1
@@ -24,5 +24,3 @@ def find_goal(grid_size, robot_position, goal_position, red_crosses):
 
     return shortest_path
 
-p=find_goal([100,100],(50,50),(70,70))
-print(p)
