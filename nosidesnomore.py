@@ -64,7 +64,7 @@ def Turning(zone, orientation):
         "p": False,
     }
 
-
+    #print("BACKING - BEEP BEEP BACKING - BEEP BEEP")
     if zone is "West": # move West
         if 357 < orientation or orientation < 3:
             key_state["turn_left"] = False

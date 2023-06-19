@@ -10,6 +10,7 @@ from path import find_nearest_ball, reconstruct_path, astar
 from nosidesnomore import danger_zone, Moving_back, Turning
 
 
+
 key_state = {
     "forward": False,
     "backward": False,
@@ -116,7 +117,7 @@ def receive_tracking_data():
                     lines.pop()
 
                 # Process each line (each complete message)
-                for line in lines:
+                for line in lines[:-1]:
                     #3print("begin line")
                     #print(line)
                     try:
@@ -166,13 +167,13 @@ def receive_tracking_data():
                             for cross in red_crosses:
                                 grid[(cross[0])][(cross[1])] = 1 
                             
-                            print
-                            if Balls_container == 2:
+                            
+                            if Balls_container is 2:
                                 goal = (grid_size[0]-20,grid_size[1]/2)
                                 print("TO THE GOAL")
                                 came_from, cost_so_far, goal_reached = astar(grid, robot_position, goal)
                                 path_to_goal = reconstruct_path(came_from, tuple(robot_position), goal)
-                                move_robot(goalpath, orientation)
+                                move_robot(path_to_goal, orientation)
 
                             
 
@@ -180,25 +181,27 @@ def receive_tracking_data():
                             print(f"Received white balls positions: {white_balls}")
 
                             if in_danger:
-
+                                print("IM IN DANGER ZONE")    
                                 if zone is not "Safe":
-                                    key_state = Turning()
+                                    print("IM IN DANGER ZONE - TURNING")
+                                    key_state = Turning(zone, orientation)
                                 elif zone is "Safe":
+                                    print("IM IN DANGER ZONE - BACKING")
                                     key_state = Moving_back()
 
                                 client_socket.send((json.dumps(key_state) + '\n').encode())
                             else:
                                 nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
                                 came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
-                                print("nearest ball: ", nearest_ball)
+                                #print("nearest ball: ", nearest_ball)
                                 
                                 # TODO error here
                                 path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
-                                print(path_to_nearest_ball)
-                                print("path to nearest ball: ", path_to_nearest_ball)
-                                print("nearest ball: ", nearest_ball)
-                                print("robot position:", robot_position)
-                                print("orientation:", orientation)
+                                #print(path_to_nearest_ball)
+                                #print("path to nearest ball: ", path_to_nearest_ball)
+                                #print("nearest ball: ", nearest_ball)
+                                #print("robot position:", robot_position)
+                                #print("orientation:", orientation)
                                 move_robot(path_to_nearest_ball, orientation)
                             
                         
@@ -301,7 +304,7 @@ def receive_tracking_data():
                             continue
 
                 # Clean data for next reading
-                data = ""
+                    data = lines[-1]
         except OSError:
             print("Warning: Cannot receive data from tracking server.")
             break
@@ -475,7 +478,6 @@ def move_robot(path_to_nearest_ball, orientation):
 
     
     if len(path_to_nearest_ball) > 1:  # If there is at least one move to make
-        print("MOVING")
         directions = convert_path_to_directions(path_to_nearest_ball)
         # next_move = directions[2]  # We choose the second element because the first one is the current robot's position
         # current_pos = directions[1]
@@ -484,7 +486,7 @@ def move_robot(path_to_nearest_ball, orientation):
         # slowmode = False
         #move = (next_move[0]-current_pos[0], next_move[1]-current_pos[1])  # Calculate the difference to determine the direction
         move = directions
-        print(f"move {move}")
+        print(f"MOVING: {move}")
         #TODO insert code tht checks if the robot is near a wall/obstacle
 
         if move[0] == -1 and move[1] == 0: # move West
