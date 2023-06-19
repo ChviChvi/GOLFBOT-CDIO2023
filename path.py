@@ -3,12 +3,18 @@ import heapq
 
 def calculate_distance(position1, position2):
     # Calculate Euclidean distance between two positions
+    if position2 is None:
+        return float('100')  # Return infinity or another appropriate default value
+
     x1, y1 = position1
     x2, y2 = position2
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+    x2, y2 = position2  
+    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
 def find_nearest_ball(grid, robot_position, balls, red_crosses):
     print("using second method")
+    print("finding nearest ball")
     # Find the nearest ball to the robot's position
     min_distance = float('inf')
     nearest_ball = None
@@ -24,24 +30,21 @@ def find_nearest_ball(grid, robot_position, balls, red_crosses):
                 print("3")
     print("printing nearest ball")
     print(nearest_ball)
+    print("nearest ball: ",nearest_ball )
+
     return nearest_ball
 
 def reconstruct_path(came_from, start, goal):
     current = tuple(goal)  # Convert goal to tuple
     path = []
+    print("reconstruct_path")
 
     print(f"error check current: {current}")
     print(current)
-    while current != tuple(start):  # Convert start to tuple
-        path.append(list(current))  # Convert current back to list for appending to path
-        
-        current = came_from[tuple(current)]  # Convert current to tuple for dictionary lookup
-
-    path.append(list(start))  # Convert start back to list for appending to path
-    path.reverse()
     return path
 
 def astar(grid, start, goal):
+    parint("astar")
     open_set = []
     heapq.heappush(open_set, (0, start))  # Push start node with priority 0
     came_from = {}
