@@ -7,6 +7,7 @@ from path import find_nearest_ball, reconstruct_path, astar
 from Robot_Movement import get_orientation_and_target, calculate_distance
 from Robot_Movement2 import find_path
 from path import find_nearest_ball, reconstruct_path, astar
+from nosidesnomore import danger_zone
 
 
 key_state = {
@@ -168,6 +169,12 @@ def receive_tracking_data():
                             
                             for cross in red_crosses:
                                 grid[(cross[0])][(cross[1])] = 1 
+
+                            in_danger, white_balls = danger_zone(grid, robot_position, white_balls)
+
+                            if in_danger:
+                                Moving_Back()
+                            else:
                             nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
                             came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
                             path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
