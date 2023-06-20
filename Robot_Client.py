@@ -220,7 +220,6 @@ def receive_tracking_data():
                             print("2 step: ", path_to_nearest_ball[1])
                             print("goal: ", path_to_nearest_ball[len(path_to_nearest_ball)-1])                               
                             print("robot position:", robot_position)
-                            print("orientation:", orientation)
                             move_robot(path_to_nearest_ball, orientation)
                         
                     
@@ -510,7 +509,7 @@ def move_robot(path_to_nearest_ball, orientation):
 
         if move[0] == -1 and move[1] == 0: # move West
             print("direction: West")
-            if 357 < orientation or orientation < 3:
+            if 356 < orientation or orientation < 4:
                 print("forward")
                 key_state["forward"] = True
                 key_state["turn_left"] = False
@@ -527,7 +526,7 @@ def move_robot(path_to_nearest_ball, orientation):
                 key_state["turn_right"] = False
         elif move[0] == 1 and move[1] == 0: # move East
             print("direction: East")
-            if 177 < orientation < 183:
+            if 176< orientation < 184:
                 print("forward")
                 key_state["forward"] = True
                 key_state["turn_left"] = False
@@ -544,7 +543,7 @@ def move_robot(path_to_nearest_ball, orientation):
                 key_state["turn_right"] = False
         elif move[0] == 0 and move[1] == -1: # move South
             print("direction: South")
-            if 267 < orientation < 273:
+            if 266 < orientation < 274:
                 print("forward")
                 key_state["forward"] = True
                 key_state["turn_left"] = False
@@ -561,11 +560,9 @@ def move_robot(path_to_nearest_ball, orientation):
                 key_state["turn_right"] = False
         elif move[0] == 0 and move[1] == 1: # move North
             print("direction: North")
-            print("WE ARE IN HERE BOYS")
             print(f"orientation : {orientation}")
-            if 87 < orientation < 93:
+            if 86 < orientation < 94:
                 print("forward")
-                print("WE ARE IN HERE BOYS1")
                 key_state["forward"] = True
                 key_state["turn_left"] = False
                 key_state["turn_right"] = False
@@ -577,75 +574,73 @@ def move_robot(path_to_nearest_ball, orientation):
                 key_state["turn_right"] = True
             elif 93 < orientation < 270: # Corrected
                 print("turn_left")
-                print("WE ARE IN HERE BOYS3")
                 key_state["forward"] = False
                 key_state["turn_left"] = True
                 key_state["turn_right"] = False
-        elif move[0] == -1 and move[1] == -1: # move Northwest
+        elif move[0] == -1 and move[1] == 1: # move Northwest
             print("direction: Northwest")
-            if 315 < orientation < 360 or 0 <= orientation < 45:
+            if 41 < orientation < 49:
                 print("forward")
                 key_state["forward"] = True
                 key_state["turn_left"] = False
                 key_state["turn_right"] = False
-            elif 180 < orientation < 315:
+            elif 0 < orientation < 42 or 225 < orientation < 360:
                 print("turn_right")
                 key_state["forward"] = False
                 key_state["turn_left"] = False
                 key_state["turn_right"] = True
-            elif 45 < orientation < 180:
+            elif 49 < orientation < 225:
                 print("turn_left")
                 key_state["forward"] = False
                 key_state["turn_left"] = True
                 key_state["turn_right"] = False
-        elif move[0] == 1 and move[1] == 1: # move Southeast
-            print("direction: Southeast")
-            if 135 < orientation < 225:
-                print("forward")
-                key_state["forward"] = True
-                key_state["turn_left"] = False
-                key_state["turn_right"] = False
-            elif 0 < orientation < 135:
-                print("turn_right")
-                key_state["forward"] = False
-                key_state["turn_left"] = False
-                key_state["turn_right"] = True
-            elif 225 < orientation < 360:
-                print("turn_left")
-                key_state["forward"] = False
-                key_state["turn_left"] = True
-                key_state["turn_right"] = False
-        elif move[0] == -1 and move[1] == 1: # move Northeast
-            print("direction: Northeast")
-            if 45 < orientation < 135:
-                print("forward")
-                key_state["forward"] = True
-                key_state["turn_left"] = False
-                key_state["turn_right"] = False
-            elif 0 <= orientation < 45:
-                print("turn_right")
-                key_state["forward"] = False
-                key_state["turn_left"] = False
-                key_state["turn_right"] = True
-            elif 135 < orientation < 360:
-                print("turn_left")
-                key_state["forward"] = False
-                key_state["turn_left"] = True
-                key_state["turn_right"] = False
-        elif move[0] == 1 and move[1] == -1: # move Southwest
+        elif move[0] == -1 and move[1] == -1: # move Southwest
             print("direction: Southwest")
-            if 225
-             < orientation < 315:
+            if 311 < orientation < 319:
                 print("forward")
                 key_state["forward"] = True
                 key_state["turn_left"] = False
                 key_state["turn_right"] = False
-            elif 90 < orientation < 225:
+            elif 319 < orientation < 360 or 0 < orientation < 135 :
                 print("turn_right")
                 key_state["forward"] = False
                 key_state["turn_left"] = False
                 key_state["turn_right"] = True
-            elif 315 < orientation or orientation < 90: # Corrected
+            elif 135 < orientation < 311:
+                print("turn_left")
+                key_state["forward"] = False
+                key_state["turn_left"] = True
+                key_state["turn_right"] = False
+        elif move[0] == 1 and move[1] == 1: # move Northeast
+            print("direction: Northeast")
+            if 131 < orientation < 139:
+                print("forward")
+                key_state["forward"] = True
+                key_state["turn_left"] = False
+                key_state["turn_right"] = False
+            elif 0 < orientation < 131 or 315 < orientation < 360:
+                print("turn_right")
+                key_state["forward"] = False
+                key_state["turn_left"] = False
+                key_state["turn_right"] = True
+            elif 139 < orientation < 315:
+                print("turn_left")
+                key_state["forward"] = False
+                key_state["turn_left"] = True
+                key_state["turn_right"] = False
+        elif move[0] == 1 and move[1] == -1: # move Southeast
+            print("direction: Southwest")
+            if 221 < orientation < 229:
+                print("forward")
+                key_state["forward"] = True
+                key_state["turn_left"] = False
+                key_state["turn_right"] = False
+            elif 45 < orientation < 221:
+                print("turn_right")
+                key_state["forward"] = False
+                key_state["turn_left"] = False
+                key_state["turn_right"] = True
+            elif 229 < orientation < 360 or 0 < orientation < 45: # Corrected
                 print("turn_left")
                 key_state["forward"] = False
                 key_state["turn_left"] = True
