@@ -150,7 +150,7 @@ print("Camera is on!")
 
 
 hsv_ranges = {}
-colors = ["FRONTSIDE_ROBOT_CONTOURS", "RED_CROSS", "BACKSIDE_ROBOT", "WHITE_BALL_1","WHITE_BALL_2","WHITE_BALL_3","WHITE_BALL_4", "ORANGE_BALL5"]
+colors = ["FRONTSIDE_ROBOT_CONTOURS", "BACKSIDE_ROBOT", "RED_CROSS_1", "RED_CROSS_2", "RED_CROSS_3", "RED_CROSS_4", "WHITE_BALL_1","WHITE_BALL_2","WHITE_BALL_3","WHITE_BALL_4", "ORANGE_BALL5"]
 balls_position = []
 orange_balls_position = []
 robot_position = None
@@ -245,6 +245,8 @@ try:
                 print(f"Select HSV values for {color}")
                 hsv_values = get_hsv_values(frame)
 
+
+
                 # get the min and max HSV values based on the selected HSV values
                 lower = [max(0, x - 13) for x in hsv_values]
                 upper = [min(255, x + 13) for x in hsv_values]
@@ -285,8 +287,14 @@ try:
             BACKSIDE_ROBOT_CONTOURS, _ = cv2.findContours(BACKSIDE_ROBOT_MASK, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
             # Get a binary image isolating the red pixels
-            red_mask = cv2.inRange(hsv, hsv_ranges['RED_CROSS']['lower'], hsv_ranges['RED_CROSS']['upper'])
-            red_contours, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            red_mask1 = cv2.inRange(hsv, hsv_ranges['RED_CROSS_1']['lower'], hsv_ranges['RED_CROSS_1']['upper'])
+            red_mask2 = cv2.inRange(hsv, hsv_ranges['RED_CROSS_2']['lower'], hsv_ranges['RED_CROSS_2']['upper'])
+            red_mask3 = cv2.inRange(hsv, hsv_ranges['RED_CROSS_3']['lower'], hsv_ranges['RED_CROSS_3']['upper'])
+            red_mask4 = cv2.inRange(hsv, hsv_ranges['RED_CROSS_4']['lower'], hsv_ranges['RED_CROSS_4']['upper'])
+            red_contours1, _ = cv2.findContours(red_mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            red_contours2, _ = cv2.findContours(red_mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            red_contours3, _ = cv2.findContours(red_mask3, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            red_contours4, _ = cv2.findContours(red_mask4, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
             if FRONTSIDE_ROBOT_CONTOURS:
                 robot_contour = max(FRONTSIDE_ROBOT_CONTOURS, key=cv2.contourArea)
@@ -338,24 +346,29 @@ try:
             
             
             # If the red cross centers have not been computed yet
-            if red_cross_centers is None:
-                red_cross_centers = []
-                frame_height = frame.shape[0]
+            #if red_cross_centers is None:
+            red_cross_centers = []
+            red_cross_centers_set = set()
+            frame_height = frame.shape[0]
+            for red_contours in [red_contours1, red_contours2, red_contours3, red_contours4]:
                 for contour in red_contours:
                     if cv2.contourArea(contour) < min_contour_area:
                         continue
-                
+
                     for point in contour:
                         point = tuple(point[0])  # convert from [[x y]] to (x, y)
                         if cv2.pointPolygonTest(polygon, (int(point[0]), int(point[1])), False) >= 0:
                             # Convert from pixel coordinates to grid coordinates, flipping the y axis
                             cv2.circle(frame, point, 5, (255, 192, 203), -1)
                             grid_point = ((point[0] - polygon[0][0]), (polygon[0][1] - point[1]))
-                            red_cross_centers.append(grid_point)
+                            if grid_point not in red_cross_centers_set:  # check if the point already exists
+                                red_cross_centers.append(grid_point)
+                                red_cross_centers_set.add(grid_point)
+
                             #grid_point = (point[0] , (frame_height - point[1]) )
                             #red_cross_centers.append(grid_point)
                             #cv2.circle(frame, point, 5, (255, 192, 203), -1)  # Draw the center of the red cross in light blue
-                print(f"Red Cross at: {red_cross_centers}")
+                #print(f"Red Cross at: {red_cross_centers}")
 
             balls_position = []  # Reset the white balls position at each frame             <-------------------------------------- TODO LOOK AT THIS
             orange_balls_position = []  # Reset the orange balls position at each frame     <-------------------------------------- TODO LOOK AT THIS
@@ -454,6 +467,7 @@ try:
                 print(f"Send white balls at: {balls_position_send.keys()}")
                 print(f"Robot poisiton - {robot_position}")
                 print(f"grid_size - {grid_size}")
+                #print(f"Red Cross at: {red_cross_centers}")
                 last_send_time = time.time()
 
             

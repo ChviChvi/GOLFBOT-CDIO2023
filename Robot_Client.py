@@ -190,19 +190,19 @@ def receive_tracking_data():
 
                             client_socket.send((json.dumps(key_state) + '\n').encode())
 
-                        # while Balls_container == 2:
-                        #     goal = (grid_size[0]-20,grid_size[1]/2)
-                        #     print("TO THE GOAL")
-                        #     came_from, cost_so_far, goal_reached = astar(grid, robot_position, goal)
-                        #     path_to_goal = reconstruct_path(came_from, tuple(robot_position), goal)
-                        #     move_robot(path_to_goal, orientation)
+                        while Balls_container == 2:
+                            goal = (grid_size[0]-20,grid_size[1]/2)
+                            print("TO THE GOAL")
+                            came_from, cost_so_far, goal_reached = astar(grid, robot_position, goal)
+                            path_to_goal = reconstruct_path(came_from, tuple(robot_position), goal)
+                            move_robot(path_to_goal, orientation)
 
-                        #     if goal[0] -5 < robot_position[0] < goal[0]+5 and goal[1] -5 < robot_position[1] < goal[1]+5:
-                        #         key_state=rotate()
-                        #         client_socket.send((json.dumps(key_state) + '\n').encode())
-                        #         if 0 <= orientation <= 5 or 345 <= orientation <= 360:
-                        #             key_state = release_balls()
-                        #             client_socket.send((json.dumps(key_state) + '\n').encode())
+                            if goal[0] -5 < robot_position[0] < goal[0]+5 and goal[1] -5 < robot_position[1] < goal[1]+5:
+                                key_state=rotate()
+                                client_socket.send((json.dumps(key_state) + '\n').encode())
+                                if 0 <= orientation <= 5 or 345 <= orientation <= 360:
+                                    key_state = release_balls()
+                                    client_socket.send((json.dumps(key_state) + '\n').encode())
 
 
 
