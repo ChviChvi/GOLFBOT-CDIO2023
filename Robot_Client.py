@@ -634,7 +634,8 @@ def move_robot(path_to_nearest_ball, orientation):
                 key_state["turn_right"] = False
         elif move[0] == 1 and move[1] == -1: # move Southwest
             print("direction: Southwest")
-            if 225 < orientation < 315:
+            if 225
+             < orientation < 315:
                 print("forward")
                 key_state["forward"] = True
                 key_state["turn_left"] = False
