@@ -1,6 +1,6 @@
 
 
-def danger_zone(grid, robot_position, ball_list, danger_percent=5):
+def danger_zone(grid, robot_position, ball_list, danger_percent=10):
     # Grid dimensions
     X, Y = grid
 
