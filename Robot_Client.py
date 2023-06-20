@@ -106,11 +106,11 @@ def receive_tracking_data():
                 lines = data.split('\n')
 
                 # If the data ended exactly with '\n', there will be an extra empty line at the end
-                if not lines[-1]:  
-                    lines.pop()
+                #if not lines[-1]:  
+                 #   lines.pop()
 
                 # Process each line (each complete message)
-                for line in lines[:-1]:
+                for line in lines:
                     #3print("begin line")
                     #print(line)
                     try:
@@ -129,7 +129,7 @@ def receive_tracking_data():
                     if 'white_balls' in received_data:
                         white_balls = received_data["white_balls"]
                         #print(f"Received white balls positions: {white_balls}")
-                        Balls_container = 10 -len(white_balls) 
+                        Balls_container = 10 #-len(white_balls) 
 
                     if 'orange_balls' in received_data:
                         orange_balls = received_data["orange_balls"]
@@ -144,17 +144,22 @@ def receive_tracking_data():
                         print(f"SIZE OF THE GRID IS: {grid_size}")
 
                     if 'orientation' in received_data:
-                        orientation = round(received_data["orientation"])
+                        orientation = received_data["orientation"]
                         print(f"orientation is (90 is north): {orientation}")
                         print("-------------- CALCULATION FROM HERE ------------")
 
                     grid = [[0 for _ in range(grid_size[0])] for _ in range(grid_size[1])]
-                    print(red_crosses)
-                    
+                    #print(red_crosses)
 
                     for cross in red_crosses:
-                        grid[(cross[0])][(cross[1])] = 1 
+                        # check if cross is within the grid boundaries
+                        if 0 <= cross[0] < grid_size[1] and 0 <= cross[1] < grid_size[0]:  
+                            grid[cross[0]][cross[1]] = 1
+                        else:
+                            # cross is out of bounds, print it and skip to the next cross
+                            print(f"The cross at {cross} is out of bounds and could not be added.")
 
+                    
                     '''        
                     for i in range(2):
                        for j in range(grid_size[0]):
@@ -179,18 +184,9 @@ def receive_tracking_data():
                         in_danger, white_balls, zone = danger_zone(grid_size, robot_position, white_balls)
                         print(f"Received white balls positions: {white_balls}")
 
-                        if in_danger:
-                            print("IM IN DANGER ZONE")    
-                            if zone is not "Safe":
-                                print("IM IN DANGER ZONE - TURNING")
-                                key_state = Turning(zone, orientation)
-                            elif zone is "Safe":
-                                print("IM IN DANGER ZONE - BACKING")
-                                key_state = Moving_back()
+                        
 
-                            client_socket.send((json.dumps(key_state) + '\n').encode())
-
-                        while Balls_container == 2:
+                        if Balls_container == 2 or len(white_balls) < 1 :
                             goal = (grid_size[0]-20,grid_size[1]/2)
                             print("TO THE GOAL")
                             came_from, cost_so_far, goal_reached = astar(grid, robot_position, goal)
@@ -204,23 +200,39 @@ def receive_tracking_data():
                                     key_state = release_balls()
                                     client_socket.send((json.dumps(key_state) + '\n').encode())
 
+                        elif in_danger:
+                            print("IM IN DANGER ZONE")    
+                            if zone is not "Safe":
+                                print("IM IN DANGER ZONE - TURNING")
+                                key_state = Turning(zone, orientation)
+                            elif zone is "Safe":
+                                print("IM IN DANGER ZONE - BACKING")
+                                key_state = Moving_back()
 
-
-
+                            client_socket.send((json.dumps(key_state) + '\n').encode())
 
                         else:
+                            
                             nearest_ball = find_nearest_ball(grid, robot_position, white_balls, red_crosses)
                             came_from, cost_so_far, goal_reached = astar(grid, robot_position, nearest_ball)
-                            print("nearest ball: ", nearest_ball)
+                            # print("nearest ball: ", nearest_ball)
+                            #print("came_from ", came_from)
+                            # print("cost_so_far ", cost_so_far)
+                            # print("goal_reached ", goal_reached)
                             
                             # TODO error here
-                            
-                            path_to_nearest_ball = reconstruct_path(came_from, tuple(robot_position), nearest_ball)
-                            print("1 step", path_to_nearest_ball[0])
-                            print("2 step: ", path_to_nearest_ball[1])
-                            print("goal: ", path_to_nearest_ball[len(path_to_nearest_ball)-1])                               
-                            print("robot position:", robot_position)
+                            # try:
+                            path_to_nearest_ball = reconstruct_path(came_from, robot_position, nearest_ball)
+                            # print("1 step", path_to_nearest_ball[0])
+                            # print("2 step: ", path_to_nearest_ball[1])
+                            # print("goal: ", path_to_nearest_ball[len(path_to_nearest_ball)-1])                               
+                            # print("robot position:", robot_position)
                             move_robot(path_to_nearest_ball, orientation)
+                            # except Exception as e:
+                            #     print(" the error current = came_from didnt work", type(e).__name__ )
+                            #     key_state = Moving_back()
+                            #     client_socket.send((json.dumps(key_state) + '\n').encode())
+                            #     continue
                         
                     
 
@@ -322,7 +334,7 @@ def receive_tracking_data():
                         continue
 
                 # Clean data for next reading
-                    data = lines[-1]
+                    data = ''
         except OSError:
             print("Warning: Cannot receive data from tracking server.")
             break
@@ -604,13 +616,13 @@ def move_robot(path_to_nearest_ball, orientation):
             elif 319 < orientation < 360 or 0 < orientation < 135 :
                 print("turn_right")
                 key_state["forward"] = False
-                key_state["turn_left"] = False
-                key_state["turn_right"] = True
+                key_state["turn_left"] = True
+                key_state["turn_right"] = False
             elif 135 < orientation < 311:
                 print("turn_left")
                 key_state["forward"] = False
-                key_state["turn_left"] = True
-                key_state["turn_right"] = False
+                key_state["turn_left"] = False
+                key_state["turn_right"] = True
         elif move[0] == 1 and move[1] == 1: # move Northeast
             print("direction: Northeast")
             if 131 < orientation < 139:

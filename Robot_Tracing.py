@@ -224,8 +224,8 @@ try:
 
         
         frame = cv2.convertScaleAbs(frame, alpha=alpha, beta=beta)
-        new_width = int(frame_width )
-        new_height = int(frame_height )
+        new_width = int(frame_width /2)
+        new_height = int(frame_height /2)
         frame = cv2.resize(frame, (new_width, new_height))
         
         #grid_size = (new_width, new_height) 
@@ -245,11 +245,14 @@ try:
                 print(f"Select HSV values for {color}")
                 hsv_values = get_hsv_values(frame)
 
-
+                if color == "ORANGE_BALL5":
+                    lower = [max(0, x - 10) for x in hsv_values]
+                    upper = [min(255, x + 10) for x in hsv_values]
 
                 # get the min and max HSV values based on the selected HSV values
-                lower = [max(0, x - 13) for x in hsv_values]
-                upper = [min(255, x + 13) for x in hsv_values]
+                else:
+                    lower = [max(0, x - 13) for x in hsv_values]
+                    upper = [min(255, x + 13) for x in hsv_values]
 
                 print(lower)
                 print(upper)
@@ -394,7 +397,7 @@ try:
                                 balls_absence_counter[close_or_duplicate] = 0
                                 # if it meets the send threshold, add to balls_position_send
                                 #if balls_counter[close_or_duplicate] >= 100 and close_or_duplicate not in balls_position_send:
-                                if balls_counter[close_or_duplicate] >= 50 and close_or_duplicate not in balls_position_send:
+                                if balls_counter[close_or_duplicate] >= 40 and close_or_duplicate not in balls_position_send:
                                     balls_position_send[close_or_duplicate] = 10
                             else:
                                 # add the new ball with initial threshold and counter
@@ -409,7 +412,7 @@ try:
                         balls_absence_counter[ball] += 1
                         # if it meets the removal threshold, remove from balls_position_send
                         #if balls_absence_counter[ball] >= 100 and ball in balls_position_send:
-                        if balls_absence_counter[ball] >= 33 and ball in balls_position_send:
+                        if balls_absence_counter[ball] >= 20 and ball in balls_position_send:
                             del balls_position_send[ball]
                     else:
                         # do not decrease the counter for the ball if it's found
@@ -461,7 +464,7 @@ try:
                     cv2.circle(frame, ball_center, 5, (0, 255, 0), -1)
                     orange_balls_position.append(((ball_center[0] - polygon[0][0]), (polygon[0][1] - ball_center[1])))
 
-            if time.time() - last_send_time >= 0.3:  # Send the data every second
+            if time.time() - last_send_time >= 1:  # Send the data every second
                 print("- - - - - -NEW SEND!- - - - - -")
                 print(f"Robot Degrees: {robot_degrees}")
                 print(f"Send white balls at: {balls_position_send.keys()}")
@@ -481,16 +484,16 @@ try:
                     "orientation": None if robot_degrees is None else float(robot_degrees)
                 }
 
-                scale_factor = 1  # Adjust this value according to your needs
+                # scale_factor = 1  # Adjust this value according to your needs
 
-                scaled_data = {
-                    "white_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["white_balls"]],
-                    "orange_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["orange_balls"]],
-                    "robot": None if data["robot"] is None else (int(data["robot"][0] / scale_factor), int(data["robot"][1] / scale_factor)),
-                    "red_crosses": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["red_crosses"]],
-                    "grid_size": None if data["grid_size"] is None else (int(data["grid_size"][0] / scale_factor), int(data["grid_size"][1] / scale_factor)),
-                    "orientation": data["orientation"]
-                }
+                # scaled_data = {
+                #     "white_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["white_balls"]],
+                #     "orange_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["orange_balls"]],
+                #     "robot": None if data["robot"] is None else (int(data["robot"][0] / scale_factor), int(data["robot"][1] / scale_factor)),
+                #     "red_crosses": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["red_crosses"]],
+                #     "grid_size": None if data["grid_size"] is None else (int(data["grid_size"][0] / scale_factor), int(data["grid_size"][1] / scale_factor)),
+                #     "orientation": data["orientation"]
+                # }
 
                 # Remove any None values
                 data = {k: v for k, v in data.items() if v is not None}

@@ -30,20 +30,19 @@ def find_nearest_ball(grid, robot_position, balls, red_crosses):
     return nearest_ball
 
 def reconstruct_path(came_from, start, goal):
-    current = tuple(goal)  # Convert goal to tuple
+    current = tuple(goal)
     path = []
-    #print("reconstruct_path")
-
-    #print(f"error check current: {current}")
-    print(current)
-    while current != tuple(start):  # Convert start to tuple
-        path.append(list(current))  # Convert current back to list for appending to path
-
-        current = came_from[tuple(current)]  # Convert current to tuple for dictionary lookup
-
-    path.append(list(start))  # Convert start back to list for appending to path
+    while current != tuple(start):
+        path.append(list(current))
+        try:
+            current = came_from[current]
+        except KeyError:
+            print(f"WARNING WARNING WARNING No path found from {start} to {goal}")
+            break
+    path.append(list(start))
     path.reverse()
     return path
+
 
 def astar(grid, start, goal):
     #print("Astar")
