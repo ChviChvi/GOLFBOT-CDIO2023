@@ -24,11 +24,11 @@ def find_goal(grid, robot_position, goal_position, red_crosses):
 
     return shortest_path
 
-def rotate():
+def rotate(orientation, walkup):
 
     key_state = {
         "forward": False,
-        "turn_left": True,
+        "turn_left": False,
         "turn_right": False,
         "backward": False,
         "slowmode": False,
@@ -36,7 +36,21 @@ def rotate():
         "p": False,
     }
 
+    if walkup < 0:
+        if orientation < 180:
+            key_state["turn_left"] = True 
+        else:
+            key_state["turn_right"] = True
+    else:
+        if orientation < 180:
+            key_state["turn_right"] = True
+        else:
+            key_state["turn_left"] = True 
+
+        
+    
     return key_state
+
 
 def release_balls():
 

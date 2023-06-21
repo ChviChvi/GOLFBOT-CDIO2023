@@ -26,7 +26,7 @@ def connect_to_robot():
     while True:
         try:
             print("Connecting to robot...")
-            client_socket.connect(("172.20.10.5", 1234))  # Replace with your EV3's IP address
+            client_socket.connect(("192.168.155.146", 1234))  # Replace with your EV3's IP address
             print("Connected to robot!")
             break
         except ConnectionRefusedError:

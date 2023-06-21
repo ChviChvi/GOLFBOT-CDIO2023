@@ -2,6 +2,18 @@ import math
 import heapq
 
 def calculate_distance(position1, position2):
+
+    #print("robot :", position1)
+    #print("ball :", position2)
+
+    # Check if the input types are correct
+    if not (isinstance(position1, tuple) or isinstance(position1, list)) or len(position1) != 2:
+        print(f"Invalid position1: {position1}")
+        return
+    if not (isinstance(position2, tuple) or isinstance(position2, list)) or len(position2) != 2:
+        print(f"Invalid position2: {position2}")
+        return
+
     # Calculate Euclidean distance between two positions
     if position2 is None:
         return float('100')  # Return infinity or another appropriate default value
@@ -9,6 +21,7 @@ def calculate_distance(position1, position2):
     x1, y1 = position1
     x2, y2 = position2
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
 
 
 
@@ -22,7 +35,7 @@ def find_nearest_ball(grid, robot_position, balls, red_crosses):
     for ball in balls:
         if ball not in red_crosses:  # Exclude red crosses
             distance = calculate_distance(robot_position, ball)
-            if distance < min_distance:
+            if distance is not None and distance < min_distance:
                 min_distance = distance
                 nearest_ball = ball
     print("nearest ball: ",nearest_ball )
@@ -30,18 +43,19 @@ def find_nearest_ball(grid, robot_position, balls, red_crosses):
     return nearest_ball
 
 def reconstruct_path(came_from, start, goal):
+    print(goal)
     current = tuple(goal)
     path = []
     while current != tuple(start):
         path.append(list(current))
-        try:
-            current = came_from[current]
-        except KeyError:
-            print(f"WARNING WARNING WARNING No path found from {start} to {goal}")
+        if current not in came_from:
+            print(f"KeyError: {current} not found in came_from")
             break
+        current = came_from[current]
     path.append(list(start))
     path.reverse()
     return path
+
 
 
 def astar(grid, start, goal):
@@ -57,7 +71,12 @@ def astar(grid, start, goal):
         current = heapq.heappop(open_set)[1]  # Pop the node with the lowest priority (cost)
         current_tuple = tuple(current)  # Convert current coordinates to a tuple
 
+        #print(f"Current node: {current}")  # Debug line
+
         if current == goal:
+
+            print("Reached goal!")  # Debug line
+
             return came_from, cost_so_far, True
 
         for neighbor in get_neighbors(grid, current):
@@ -69,7 +88,9 @@ def astar(grid, start, goal):
                 priority = new_cost + calculate_distance(neighbor, goal)
                 heapq.heappush(open_set, (priority, neighbor))
                 came_from[neighbor_tuple] = current_tuple
+        #print(f"Came from: {came_from}")  # Debug line
 
+    print("Open set is empty, did not reach goal")
     return came_from, cost_so_far, goal  # Return False if the goal was not reached
 
 def get_neighbors(grid, position):
@@ -77,16 +98,19 @@ def get_neighbors(grid, position):
     x, y = position
     neighbors = []
 
+    grid_height = len(grid)
+    
     # Check horizontal and vertical neighbors
     for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
         nx, ny = x + dx, y + dy
-        if (0 <= nx < len(grid)) and (0 <= ny < len(grid[0])) and (grid[nx][ny] != 1):
+        if (0 <= nx < len(grid[0])) and (0 <= ny < grid_height) and (grid[grid_height-ny-1][nx] != 1):
             neighbors.append((nx, ny))
 
     # Check diagonal neighbors
     for dx, dy in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
         nx, ny = x + dx, y + dy
-        if (0 <= nx < len(grid)) and (0 <= ny < len(grid[0])) and (grid[nx][ny] != 1):
+        if (0 <= nx < len(grid[0])) and (0 <= ny < grid_height) and (grid[grid_height-ny-1][nx] != 1):
             neighbors.append((nx, ny))
 
     return neighbors
+

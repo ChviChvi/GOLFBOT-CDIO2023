@@ -99,11 +99,13 @@ def draw_ROI(frame):
     ax.imshow(frame_rgb)
 
     # Let the user select the 4 corners of the rectangle
-    ROI = plt.ginput(4)
+    points = plt.ginput(5)
 
-    if len(ROI) > 0:
+    if len(points) == 5:
         # Convert the ROI to a numpy array
-        ROI = np.array(ROI, dtype=np.float32)
+        ROI = np.array(points[:4], dtype=np.float32)
+        extra_point = np.array(points[4], dtype=np.float32)  # the last point is the extra point
+
 
         # Find the minimum and maximum coordinates in each dimension
         min_x = np.min(ROI[:, 0])
@@ -135,13 +137,16 @@ def draw_ROI(frame):
 
         # Scatter plot the marker points
         ax.scatter(ROI[:-1, 0], ROI[:-1, 1], c='r', s=10)
+        ax.scatter([extra_point[0]], [extra_point[1]], c='b', s=50, marker='x')
+
+
 
         plt.show()
     else:
         print("No valid points were selected.")
-        ROI = None
+        return None, None
 
-    return ROI
+    return ROI, extra_point
 
 
 print("Waiting for camera...")
@@ -157,12 +162,17 @@ robot_position = None
 robot_angle = None
 red_cross_centers = None
 frame_corners = None
+extra_point = None
 
 cell_size = 1
 
 last_send_time = time.time()
 last_robot_print_time = time.time()
 last_print_time = time.time()
+
+last_send_time_data1 = 0
+last_send_time_data2 = 0
+last_send_time_data3 = 0
 
 # these two functions calculate the degrees > if it return 0 is is looking east, 90 north etc.
 def get_vector(p1, p2):
@@ -232,7 +242,7 @@ try:
         #print(f"grid size: {grid_size}")
         
         if frame_corners is None:
-            frame_corners = draw_ROI(frame)
+            frame_corners, extra_point = draw_ROI(frame)
             #frame_corners = [quantize_coordinates(point, 10) for point in frame_corners]
             if frame_corners is not None:  # Check if draw_ROI returned valid points
                 frame_corners = [(int(p[0]), int(p[1])) for p in frame_corners]
@@ -240,19 +250,35 @@ try:
                 max_x = max(p[0] for p in frame_corners)
                 max_y = max(p[1] for p in frame_corners)
                 grid_size = ((max_x), (max_y))
+        
+        if extra_point is not None:
+            extra_point = (int(extra_point[0]), int(extra_point[1]))
+            #print(f"The extra point is in grid location ({extra_point})")
+
+
         if hsv_ranges == {}:
             for color in colors:
                 print(f"Select HSV values for {color}")
                 hsv_values = get_hsv_values(frame)
 
                 if color == "ORANGE_BALL5":
-                    lower = [max(0, x - 10) for x in hsv_values]
-                    upper = [min(255, x + 10) for x in hsv_values]
+                    lower = [max(0, x - 15) for x in hsv_values]
+                    upper = [min(255, x + 15) for x in hsv_values]
 
                 # get the min and max HSV values based on the selected HSV values
                 else:
-                    lower = [max(0, x - 13) for x in hsv_values]
-                    upper = [min(255, x + 13) for x in hsv_values]
+                    lower = [max(0, x - 23) for x in hsv_values]
+                    upper = [min(255, x + 23) for x in hsv_values]
+                    
+                    #lower = [max(0, x - 10) for lower[2] in hsv_values]
+                    #upper = [min(255, x + 10) for upper[2] hsv_values[2]]
+
+                    #lower[2] = max(0,lower[2] - 10)
+                    #upper[2] = min(255,upper[2] + 10)
+                    
+
+                    #lower[2] = [max(0, x - 10)]
+                    #upper[2] = [max(255, x + 10)]
 
                 print(lower)
                 print(upper)
@@ -298,6 +324,9 @@ try:
             red_contours2, _ = cv2.findContours(red_mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             red_contours3, _ = cv2.findContours(red_mask3, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             red_contours4, _ = cv2.findContours(red_mask4, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+
+            cv2.circle(frame, extra_point, 5, (203, 111, 189), -1) #goal
 
             if FRONTSIDE_ROBOT_CONTOURS:
                 robot_contour = max(FRONTSIDE_ROBOT_CONTOURS, key=cv2.contourArea)
@@ -350,6 +379,13 @@ try:
             
             # If the red cross centers have not been computed yet
             #if red_cross_centers is None:
+            import itertools
+
+            def generate_surrounding_points(center, distance):
+                x, y = center
+                directions = [(dx, dy) for dx, dy in itertools.product(range(-distance, distance+1), repeat=2)]
+                return [(x + dx, y + dy) for dx, dy in directions]
+
             red_cross_centers = []
             red_cross_centers_set = set()
             frame_height = frame.shape[0]
@@ -367,6 +403,10 @@ try:
                             if grid_point not in red_cross_centers_set:  # check if the point already exists
                                 red_cross_centers.append(grid_point)
                                 red_cross_centers_set.add(grid_point)
+                                surrounding_points = generate_surrounding_points(grid_point, 3)
+                                red_cross_centers.extend(surrounding_points)
+                                red_cross_centers_set.update(surrounding_points)
+
 
                             #grid_point = (point[0] , (frame_height - point[1]) )
                             #red_cross_centers.append(grid_point)
@@ -429,9 +469,9 @@ try:
                         del balls_position_send[ball]
                 #print(f"White balls at: {balls_position}")
                 #print(f"Verified white balls at: {balls_position_verified.keys()}")
-                if time.time() - last_send_time >= 1:
-                    print(f"Send white balls at: {balls_position_send.keys()}")
-                    print(f"robot poisiton - {robot_position}")
+                #if time.time() - last_send_time >= 1:
+                    #print(f"Send white balls at: {balls_position_send.keys()}")
+                    #print(f"robot poisiton - {robot_position}")
     
             #assign_ids_to_balls(balls_position)  # NEW
 
@@ -464,53 +504,178 @@ try:
                     cv2.circle(frame, ball_center, 5, (0, 255, 0), -1)
                     orange_balls_position.append(((ball_center[0] - polygon[0][0]), (polygon[0][1] - ball_center[1])))
 
-            if time.time() - last_send_time >= 1:  # Send the data every second
-                print("- - - - - -NEW SEND!- - - - - -")
-                print(f"Robot Degrees: {robot_degrees}")
-                print(f"Send white balls at: {balls_position_send.keys()}")
-                print(f"Robot poisiton - {robot_position}")
-                print(f"grid_size - {grid_size}")
-                #print(f"Red Cross at: {red_cross_centers}")
-                last_send_time = time.time()
+            # if time.time() - last_send_time >= 1:  # Send the data every second
+            #     print("- - - - - -NEW SEND!- - - - - -")
+            #     print(f"Robot Degrees: {robot_degrees}")
+            #     print(f"Send white balls at: {balls_position_send.keys()}")
+            #     print(f"Robot poisiton - {robot_position}")
+            #     print(f"grid_size - {grid_size}")
+            #     #print(f"Red Cross at: {red_cross_centers}")
+            #     last_send_time = time.time()
 
             
-                # Create a dictionary to hold all the data
-                data = {
-                    "white_balls": [tuple(int(x) for x in pos) for pos in balls_position_send],
-                    "orange_balls": [tuple(int(x) for x in pos) for pos in orange_balls_position],
+            #     # Create a dictionary to hold all the data
+            #     # data = {
+            #     #     "white_balls": [tuple(int(x) for x in pos) for pos in balls_position_send],
+            #     #     "orange_balls": [tuple(int(x) for x in pos) for pos in orange_balls_position],
+            #     #     "robot": None if robot_position is None else tuple(int(x) for x in robot_position),
+            #     #     "red_crosses": [tuple(int(x) for x in pos) for pos in red_cross_centers],
+            #     #     "grid_size": None if grid_size is None else tuple(int(x) for x in grid_size),
+            #     #     "orientation": None if robot_degrees is None else float(robot_degrees)
+            #     # }
+                
+            #     data1 = {
+            #         "robot": None if robot_position is None else tuple(int(x) for x in robot_position),
+            #         "orientation": None if robot_degrees is None else float(robot_degrees)
+            #     }
+
+            #     data2 = {
+            #         "white_balls": [tuple(int(x) for x in pos) for pos in balls_position_send],
+            #         "orange_balls": [tuple(int(x) for x in pos) for pos in orange_balls_position],
+            #         "red_crosses": [tuple(int(x) for x in pos) for pos in red_cross_centers],
+            #         "grid_size": None if grid_size is None else tuple(int(x) for x in grid_size),
+            #     }
+
+            #     # scale_factor = 1  # Adjust this value according to your needs
+
+            #     # scaled_data = {
+            #     #     "white_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["white_balls"]],
+            #     #     "orange_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["orange_balls"]],
+            #     #     "robot": None if data["robot"] is None else (int(data["robot"][0] / scale_factor), int(data["robot"][1] / scale_factor)),
+            #     #     "red_crosses": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["red_crosses"]],
+            #     #     "grid_size": None if data["grid_size"] is None else (int(data["grid_size"][0] / scale_factor), int(data["grid_size"][1] / scale_factor)),
+            #     #     "orientation": data["orientation"]
+            #     # }
+
+            #     # Remove any None values
+            #     data = {k: v for k, v in data.items() if v is not None}
+
+            #     if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
+            #         try:
+            #             client_socket.send((json.dumps(data) + '\n').encode())
+            #         except Exception as e: 
+            #             print(f"Error sending data: {e}")
+            #             connection_event.clear()  
+            #             if connection_thread.is_alive():  
+            #                 print("Waiting for connection thread to finish")
+            #                 connection_thread.join()  
+            #             is_exiting = False  
+            #             connection_thread = threading.Thread(target=wait_for_connection)  
+            #             connection_thread.start()
+        
+            # Initialize last send times for data1 and data2
+
+
+            # Assuming your code runs in a loop
+            current_time = time.time()
+
+            # Sending data1 every 0.5 second
+            if current_time - last_send_time_data1 >= 0.8:
+                print("- - - - - -NEW SEND! QUICK- - - - - -")
+                print(f"Robot Degrees: {robot_degrees}")
+                print(f"Robot poisiton - {robot_position}")
+                #print(f"Red Cross at: {red_cross_centers}")
+                data1 = {
                     "robot": None if robot_position is None else tuple(int(x) for x in robot_position),
-                    "red_crosses": [tuple(int(x) for x in pos) for pos in red_cross_centers],
-                    "grid_size": None if grid_size is None else tuple(int(x) for x in grid_size),
                     "orientation": None if robot_degrees is None else float(robot_degrees)
                 }
 
-                # scale_factor = 1  # Adjust this value according to your needs
+                data = {k: v for k, v in data1.items() if v is not None}  # Remove any None values
 
-                # scaled_data = {
-                #     "white_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["white_balls"]],
-                #     "orange_balls": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["orange_balls"]],
-                #     "robot": None if data["robot"] is None else (int(data["robot"][0] / scale_factor), int(data["robot"][1] / scale_factor)),
-                #     "red_crosses": [(int(x[0] / scale_factor), int(x[1] / scale_factor)) for x in data["red_crosses"]],
-                #     "grid_size": None if data["grid_size"] is None else (int(data["grid_size"][0] / scale_factor), int(data["grid_size"][1] / scale_factor)),
-                #     "orientation": data["orientation"]
-                # }
-
-                # Remove any None values
-                data = {k: v for k, v in data.items() if v is not None}
-
-                if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
-                    try:
-                        client_socket.send((json.dumps(data) + '\n').encode())
-                    except Exception as e: 
-                        print(f"Error sending data: {e}")
-                        connection_event.clear()  
-                        if connection_thread.is_alive():  
-                            print("Waiting for connection thread to finish")
-                            connection_thread.join()  
-                        is_exiting = False  
-                        connection_thread = threading.Thread(target=wait_for_connection)  
-                        connection_thread.start()
+                            #     if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
+                try:
+                    client_socket.send((json.dumps(data) + '\n').encode())
+                except Exception as e: 
         
+                    connection_event.clear()  
+                    if connection_thread.is_alive():  
+
+                        connection_thread.join()  
+                    is_exiting = False  
+                    connection_thread = threading.Thread(target=wait_for_connection)  
+                    connection_thread.start()
+                        
+                last_send_time_data1 = current_time
+
+            # Sending data2 every 20 seconds
+        
+            if current_time - last_send_time_data3 >= 35:
+                print("- - - - - -NEW SEND! SLOW- - - - - -")
+                print(f"Send white balls at: {balls_position_send}")
+                print(f"grid_size - {grid_size}")
+                print(f"red_crosses - {red_cross_centers}")
+                data2 = {
+                    "white_balls": [tuple(int(x) for x in pos) for pos in balls_position_send],
+                    "orange_balls": [tuple(int(x) for x in pos) for pos in orange_balls_position],
+                    "red_crosses": [tuple(int(x) for x in pos) for pos in red_cross_centers],
+                    "grid_size": None if grid_size is None else tuple(int(x) for x in grid_size),
+                }
+
+                data = {k: v for k, v in data2.items() if v is not None}  # Remove any None values
+
+                            #     if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
+                try:
+                    client_socket.send((json.dumps(data) + '\n').encode())
+                except Exception as e: 
+        
+                    connection_event.clear()  
+                    if connection_thread.is_alive():  
+
+                        connection_thread.join()  
+                    is_exiting = False  
+                    connection_thread = threading.Thread(target=wait_for_connection)  
+                    connection_thread.start()
+                        
+                last_send_time_data3 = current_time
+            
+            if current_time - last_send_time_data2 >= 10:
+                print("- - - - - -NEW SEND!  CROSS SLOW- - - - - -")
+                #print(f"Send white balls at: {balls_position_send}")
+                print(f"grid_size - {grid_size}")
+                print(f"goal_point - {extra_point}")
+                data3 = {
+                    #"white_balls": [tuple(int(x) for x in pos) for pos in balls_position_send],
+                    #"orange_balls": [tuple(int(x) for x in pos) for pos in orange_balls_position],
+                    #"red_crosses": [tuple(int(x) for x in pos) for pos in red_cross_centers],
+                    "grid_size": None if grid_size is None else tuple(int(x) for x in grid_size),
+                    "goal_point": None if extra_point is None else tuple(int(x) for x in extra_point)
+                }
+
+                data = {k: v for k, v in data3.items() if v is not None}  # Remove any None values
+
+                            #     if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
+                try:
+                    client_socket.send((json.dumps(data) + '\n').encode())
+                except Exception as e: 
+        
+                    connection_event.clear()  
+                    if connection_thread.is_alive():  
+
+                        connection_thread.join()  
+                    is_exiting = False  
+                    connection_thread = threading.Thread(target=wait_for_connection)  
+                    connection_thread.start()
+                        
+                last_send_time_data2 = current_time
+
+
+            #     data = {k: v for k, v in data.items() if v is not None}
+
+            #     if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
+            #         try:
+            #             client_socket.send((json.dumps(data) + '\n').encode())
+            #         except Exception as e: 
+          
+            #             connection_event.clear()  
+            #             if connection_thread.is_alive():  
+   
+            #                 connection_thread.join()  
+            #             is_exiting = False  
+            #             connection_thread = threading.Thread(target=wait_for_connection)  
+            #             connection_thread.start()
+            
+
+
             cv2.polylines(frame, [polygon], True, (0,255,0), 2)
             cv2.imshow('Frame', frame)
 
