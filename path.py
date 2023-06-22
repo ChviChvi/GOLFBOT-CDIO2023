@@ -2,10 +2,6 @@ import math
 import heapq
 
 def calculate_distance(position1, position2):
-
-    #print("robot :", position1)
-    #print("ball :", position2)
-
     # Check if the input types are correct
     if not (isinstance(position1, tuple) or isinstance(position1, list)) or len(position1) != 2:
         print(f"Invalid position1: {position1}")
@@ -21,10 +17,6 @@ def calculate_distance(position1, position2):
     x1, y1 = position1
     x2, y2 = position2
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-
-
-
-
 
 def find_nearest_ball(grid, robot_position, balls, red_crosses):
     #print("finding nearest ball")
@@ -56,42 +48,32 @@ def reconstruct_path(came_from, start, goal):
     path.reverse()
     return path
 
-
-
 def astar(grid, start, goal):
-    #print("Astar")
+
     open_set = []
-    heapq.heappush(open_set, (0, start))  # Push start node with priority 0
+    heapq.heappush(open_set, (0, start))  
     came_from = {}
     cost_so_far = {}
     came_from[tuple(start)] = None
     cost_so_far[tuple(start)] = 0
 
     while open_set:
-        current = heapq.heappop(open_set)[1]  # Pop the node with the lowest priority (cost)
-        current_tuple = tuple(current)  # Convert current coordinates to a tuple
-
-        #print(f"Current node: {current}")  # Debug line
-
+        current = heapq.heappop(open_set)[1]  
+        current_tuple = tuple(current)  
         if current == goal:
-
-            print("Reached goal!")  # Debug line
 
             return came_from, cost_so_far, True
 
         for neighbor in get_neighbors(grid, current):
-            neighbor_tuple = tuple(neighbor)  # Convert neighbor coordinates to a tuple
-            new_cost = cost_so_far[current_tuple] + 1  # Assuming a cost of 1 to move to a neighboring cell
-
+            neighbor_tuple = tuple(neighbor)  
+            new_cost = cost_so_far[current_tuple] + 1  
             if neighbor_tuple not in cost_so_far or new_cost < cost_so_far[neighbor_tuple]:
                 cost_so_far[neighbor_tuple] = new_cost
                 priority = new_cost + calculate_distance(neighbor, goal)
                 heapq.heappush(open_set, (priority, neighbor))
                 came_from[neighbor_tuple] = current_tuple
-        #print(f"Came from: {came_from}")  # Debug line
 
-    print("Open set is empty, did not reach goal")
-    return came_from, cost_so_far, goal  # Return False if the goal was not reached
+    return came_from, cost_so_far, goal  
 
 def get_neighbors(grid, position):
     # Get valid neighboring positions in the grid

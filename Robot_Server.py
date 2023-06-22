@@ -14,14 +14,14 @@ server_socket.bind(("0.0.0.0", 1234))
 # Create motor objects
 tank = MoveTank(OUTPUT_C, OUTPUT_D)
 medium_motor_1 = MediumMotor(OUTPUT_B)
-medium_motor_2 = MediumMotor(OUTPUT_A)  # Set this to the port the second medium motor is connected to
+medium_motor_2 = MediumMotor(OUTPUT_A)  
 
 # Listen for incoming connections
 server_socket.listen(1)
 
 print("Server started. Waiting for a connection...")
 
-buffer = '' # Declare the buffer at the start of your script
+buffer = '' 
 
 try:
     while True:
@@ -37,8 +37,8 @@ try:
                     command_str = buffer[:end_of_object_index]
                     buffer = buffer[end_of_object_index:] 
                     command = json.loads(command_str)
-                    print("Received command: {}".format(command))  # Printing Commands!!
-                
+                    print("Received command: {}".format(command))  
+
                     left_motor_speed = 0
                     right_motor_speed = 0
                     motor_speed = 0

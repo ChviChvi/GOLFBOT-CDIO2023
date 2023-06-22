@@ -1,28 +1,22 @@
 def danger_zone(grid, robot_position, ball_list, danger_percent=18):
-    # Grid dimensions
     X, Y = grid
 
-    # Calculate danger distance based on percentage
     danger_distance_x = X * (danger_percent / 100)
     danger_distance_y = Y * (danger_percent / 100)
 
     # Robot position
     x, y = robot_position
 
-    # Ignore if the robot is outside of the grid
     if x < 0 or x >= X or y < 0 or y >= Y:
         return False, [], "Outside of grid"
 
-    # Define danger zone flags
     danger_left = x < danger_distance_x
     danger_right = X-x <= danger_distance_x
     danger_up = y < danger_distance_y
     danger_down = Y-y <= danger_distance_y
 
-    # Checking if robot is in the danger zone
     in_danger = danger_left or danger_right or danger_up or danger_down
 
-    # Determine the danger zone
     if danger_up and danger_right:
         zone = "North East"
     elif danger_up and danger_left:
@@ -42,7 +36,6 @@ def danger_zone(grid, robot_position, ball_list, danger_percent=18):
     else:
         zone = "Safe"
 
-    # Filter the ball list to remove any that are within the danger zone or outside the grid
     new_ball_list = []
     for ball in ball_list:
         if not isinstance(ball, (list, tuple)) or len(ball) != 2:
@@ -55,9 +48,6 @@ def danger_zone(grid, robot_position, ball_list, danger_percent=18):
             new_ball_list.append(ball)
 
     return in_danger, new_ball_list, zone
-
-
-
 
 def Turning1(zone, orientation):
 
@@ -263,7 +253,6 @@ def Turning(zone, orientation):
             key_state["turn_left"] = True
     
     return key_state
-
 
 def Moving_back():
 

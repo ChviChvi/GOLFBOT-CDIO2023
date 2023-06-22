@@ -51,7 +51,6 @@ def rotate(orientation, walkup):
     
     return key_state
 
-
 def release_balls():
 
     key_state = {

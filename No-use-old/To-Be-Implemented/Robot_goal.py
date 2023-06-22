@@ -29,7 +29,7 @@ def connect_to_robot():
             client_socket.connect(("192.168.155.146", 1234))  # Replace with your EV3's IP address
             print("Connected to robot!")
             
-            while True:  # Check for active connection
+            while True:  
                 try:
                     client_socket.send(json.dumps({'ping': True}).encode())  # Test send data
                     time.sleep(5)  # Wait 5 seconds before checking again
