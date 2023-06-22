@@ -35,17 +35,15 @@ try:
                 try:
                     end_of_object_index = buffer.index('}') + 1
                     command_str = buffer[:end_of_object_index]
-                    buffer = buffer[end_of_object_index:]  # Remove the parsed command from the buffer
+                    buffer = buffer[end_of_object_index:] 
                     command = json.loads(command_str)
-                    print("Received command: {}".format(command))  # Print the received command
+                    print("Received command: {}".format(command))  # Printing Commands!!
                 
                     left_motor_speed = 0
                     right_motor_speed = 0
                     motor_speed = 0
                     claw_speed = 0
 
-
-                    # check if key exists in command before trying to access it
                     if 'forward' in command and command['forward']:
                         left_motor_speed += 15
                         right_motor_speed += 15
@@ -58,48 +56,26 @@ try:
                         left_motor_speed += 3
                         right_motor_speed -= 3
                         claw_speed = 0
-                        #tank.on_for_degrees(-25, 25, 25)
                     if 'turn_right' in command and command['turn_right']:
                         left_motor_speed -= 3
                         right_motor_speed += 3
-                        claw_speed = 0
-                        #tank.on_for_degrees(25, -25, 25)
+                        claw_speed = 0                  
                     if 'o' in command and command['o']:
                         motor_speed = 20
                     if 'p' in command and command['p']:
                         motor_speed = -20
 
-                    # if 'up' in command and command['up']:
-                    #     tank.on_for_degrees(50, 50, 90)
-                    # if 'down' in command and command['down']:
-                    #     tank.on_for_degrees(-50, -50, 90)
-                    # if 'left' in command and command['left']:
-                    #     tank.on_for_degrees(-50, 50, 90)
-                    # if 'right' in command and command['right']:
-                    #     tank.on_for_degrees(50, -50, 90)
-                    # if 'o' in command and command['o']:
-                    #     medium_motor_2.on_for_degrees(25, 90)
-                    # if 'p' in command and command['p']:
-                    #     medium_motor_2.on_for_degrees(-25, 90)
-
                     tank.on(left_motor_speed, right_motor_speed)
                     medium_motor_2.on(motor_speed)
                     medium_motor_1.on(claw_speed)
                 except ValueError:
-                    # This means a complete JSON object has not been received yet. Just continue to accumulate data in the buffer.
                     pass
 
             except socket.error:
                 print("Connection lost. Attempting to reconnect...")
                 client_socket.close()
-                break  # This breaks the inner while loop and goes back to waiting for a new connection
+                break  
 
-
-
-            
-        
-        #client_socket.close()
-        #print("Client disconnected.")
 except KeyboardInterrupt:
     # Stop the motors when the server is stopped
     tank.off()

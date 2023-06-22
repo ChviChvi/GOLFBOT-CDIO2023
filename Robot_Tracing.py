@@ -243,18 +243,15 @@ try:
         
         if frame_corners is None:
             frame_corners, extra_point = draw_ROI(frame)
-            #frame_corners = [quantize_coordinates(point, 10) for point in frame_corners]
-            if frame_corners is not None:  # Check if draw_ROI returned valid points
+            if frame_corners is not None:  
                 frame_corners = [(int(p[0]), int(p[1])) for p in frame_corners]
-                # Calculate grid size
+               
                 max_x = max(p[0] for p in frame_corners)
                 max_y = max(p[1] for p in frame_corners)
                 grid_size = ((max_x), (max_y))
         
         if extra_point is not None:
             extra_point = (int(extra_point[0]), int(extra_point[1]))
-            #print(f"The extra point is in grid location ({extra_point})")
-
 
         if hsv_ranges == {}:
             for color in colors:
@@ -264,30 +261,15 @@ try:
                 if color == "ORANGE_BALL5":
                     lower = [max(0, x - 15) for x in hsv_values]
                     upper = [min(255, x + 15) for x in hsv_values]
-
-                # get the min and max HSV values based on the selected HSV values
+                
                 else:
                     lower = [max(0, x - 23) for x in hsv_values]
                     upper = [min(255, x + 23) for x in hsv_values]
                     
-                    #lower = [max(0, x - 10) for lower[2] in hsv_values]
-                    #upper = [min(255, x + 10) for upper[2] hsv_values[2]]
-
-                    #lower[2] = max(0,lower[2] - 10)
-                    #upper[2] = min(255,upper[2] + 10)
-                    
-
-                    #lower[2] = [max(0, x - 10)]
-                    #upper[2] = [max(255, x + 10)]
-
-                print(lower)
-                print(upper)
-
                 hsv_ranges[color] = {
                     "lower": np.array(lower, dtype=np.uint8),
                     "upper": np.array(upper, dtype=np.uint8)
                 }
-            print(hsv_ranges)
     
 
         if frame_corners is not None:  # This is a new conditional block
@@ -307,7 +289,7 @@ try:
             white_contours3, _ = cv2.findContours(white_mask3, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             white_contours4, _ = cv2.findContours(white_mask4, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            # Get a binary image isolating the orange pixels
+            # make mask and contour
             orange_mask = cv2.inRange(hsv, hsv_ranges['ORANGE_BALL5']['lower'], hsv_ranges['ORANGE_BALL5']['upper'])
             orange_contours, _ = cv2.findContours(orange_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
@@ -569,20 +551,16 @@ try:
             # Assuming your code runs in a loop
             current_time = time.time()
 
-            # Sending data1 every 0.5 second
+            # Sending data1 every 0.8 second
             if current_time - last_send_time_data1 >= 0.8:
                 print("- - - - - -NEW SEND! QUICK- - - - - -")
                 print(f"Robot Degrees: {robot_degrees}")
                 print(f"Robot poisiton - {robot_position}")
-                #print(f"Red Cross at: {red_cross_centers}")
                 data1 = {
                     "robot": None if robot_position is None else tuple(int(x) for x in robot_position),
                     "orientation": None if robot_degrees is None else float(robot_degrees)
                 }
-
-                data = {k: v for k, v in data1.items() if v is not None}  # Remove any None values
-
-                            #     if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
+                data = {k: v for k, v in data1.items() if v is not None}            
                 try:
                     client_socket.send((json.dumps(data) + '\n').encode())
                 except Exception as e: 
@@ -597,8 +575,7 @@ try:
                         
                 last_send_time_data1 = current_time
 
-            # Sending data2 every 20 seconds
-        
+            # Sending data2 every 35 seconds
             if current_time - last_send_time_data3 >= 35:
                 print("- - - - - -NEW SEND! SLOW- - - - - -")
                 print(f"Send white balls at: {balls_position_send}")
@@ -611,9 +588,7 @@ try:
                     "grid_size": None if grid_size is None else tuple(int(x) for x in grid_size),
                 }
 
-                data = {k: v for k, v in data2.items() if v is not None}  # Remove any None values
-
-                            #     if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
+                data = {k: v for k, v in data2.items() if v is not None} 
                 try:
                     client_socket.send((json.dumps(data) + '\n').encode())
                 except Exception as e: 
@@ -630,20 +605,14 @@ try:
             
             if current_time - last_send_time_data2 >= 10:
                 print("- - - - - -NEW SEND!  CROSS SLOW- - - - - -")
-                #print(f"Send white balls at: {balls_position_send}")
                 print(f"grid_size - {grid_size}")
                 print(f"goal_point - {extra_point}")
                 data3 = {
-                    #"white_balls": [tuple(int(x) for x in pos) for pos in balls_position_send],
-                    #"orange_balls": [tuple(int(x) for x in pos) for pos in orange_balls_position],
-                    #"red_crosses": [tuple(int(x) for x in pos) for pos in red_cross_centers],
                     "grid_size": None if grid_size is None else tuple(int(x) for x in grid_size),
                     "goal_point": None if extra_point is None else tuple(int(x) for x in extra_point)
                 }
 
-                data = {k: v for k, v in data3.items() if v is not None}  # Remove any None values
-
-                            #     if client_socket is not None and connection_event.is_set():  # Only send data if the script is connected
+                data = {k: v for k, v in data3.items() if v is not None}  
                 try:
                     client_socket.send((json.dumps(data) + '\n').encode())
                 except Exception as e: 
