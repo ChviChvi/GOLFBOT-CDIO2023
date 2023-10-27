@@ -1,4 +1,4 @@
-# CDIO2023
+# GOLFBOT - CDIO2023
 
 In this project we used different tools to have a robot capture balls in a given frame, and deliver these to a goal. The project was part of our Conceive, Design, Implement, and Operate (CDIO) course at the ending of the 3rd semester. 
 
